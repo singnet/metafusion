@@ -42,10 +42,10 @@ def add_scheduler(pipe, scheduler):
 
 
 class BasePipe:
+
     def __init__(self):
         self.pipe = None
         self._scheduler = None
-
 
     def try_set_scheduler(self, inputs):
         # allow for scheduler overwrite
