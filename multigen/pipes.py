@@ -1,16 +1,66 @@
+import importlib
 import torch
+
 from PIL import Image
 import cv2
 import numpy as np
+from diffusers import DPMSolverMultistepScheduler
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
+from diffusers.schedulers import KarrasDiffusionSchedulers
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 # from diffusers import StableDiffusionKDiffusionPipeline
 
 
-class Prompt2ImPipe:
+def get_diffusion_scheduler_names():
+    """
+    return list of schedulers that can be use in our pipelines
+    """
+    scheduler_names = []
+    for scheduler in KarrasDiffusionSchedulers:
+        scheduler_names.append(scheduler.name)
+    return scheduler_names
 
-    def __init__(self, model_id, dtype=torch.float16, lpw=False):
+
+def add_scheduler(pipe, scheduler):
+    # setup scheduler
+    if scheduler is None:
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        return 'DPMSolverMultistepScheduler'
+    else:
+        # Import the scheduler class dynamically based on the provided name
+        try:
+            module_name = "diffusers.schedulers"
+            class_name = scheduler
+            module = importlib.import_module(module_name)
+            scheduler_class = getattr(module, class_name)
+            pipe.scheduler = scheduler_class.from_config(pipe.scheduler.config)
+            return class_name
+        except (ImportError, AttributeError):
+            raise ValueError("Invalid scheduler specified")
+    return None
+
+
+class BasePipe:
+
+    def __init__(self):
+        self.pipe = None
+        self._scheduler = None
+
+    def try_set_scheduler(self, inputs):
+        # allow for scheduler overwrite
+        scheduler = inputs.get('scheduler', None)
+        if scheduler is not None and self.pipe is not None:
+            sch_set = add_scheduler(self.pipe, scheduler=scheduler)
+            if sch_set:
+                self._scheduler = sch_set
+            inputs.pop('scheduler')
+
+
+class Prompt2ImPipe(BasePipe):
+
+    def __init__(self, model_id, dtype=torch.float16, lpw=False, scheduler=None):
+        super().__init__()
         self.model_id = model_id
         # TODO? Any other custom pipeline?
         self.pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=dtype) if not lpw else \
@@ -25,6 +75,7 @@ class Prompt2ImPipe:
         # self.pipe.enable_sequential_cpu_offload()
         self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
         # self.pipe.vae.enable_xformers_memory_efficient_attention() # attention_op=None)
+        self.try_set_scheduler(dict(scheduler=scheduler))
 
     def setup(self, width=768, height=768):
         self.pipe_params = {
@@ -40,18 +91,22 @@ class Prompt2ImPipe:
     def gen(self, inputs):
         inputs = {**inputs}
         inputs.update(self.pipe_params)
+        # allow for scheduler overwrite
+        self.try_set_scheduler(inputs)
         image = self.pipe(**inputs).images[0]
         return image
 
 
-class Im2ImPipe:
+class Im2ImPipe(BasePipe):
 
-    def __init__(self, model_id, dtype=torch.float16):
+    def __init__(self, model_id, dtype=torch.float16, scheduler=None):
+        super().__init__()
         self.model_id = model_id
         self.pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, torch_dtype=dtype)
         self.pipe.to("cuda")
         self.pipe.vae.enable_tiling()
-        #self.pipe.enable_xformers_memory_efficient_attention()
+        # setup scheduler
+        self.try_set_scheduler(dict(scheduler=scheduler))
 
     def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None):
         self.fname = fimage
@@ -77,6 +132,7 @@ class Im2ImPipe:
         inputs = {**inputs}
         inputs.update(self.pipe_params)
         inputs.update({"image": self.image})
+        self.try_set_scheduler(inputs)
         image = self.pipe(**inputs).images[0]
         return image
 
