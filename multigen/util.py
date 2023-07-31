@@ -8,6 +8,7 @@ def save_metadata(image_path, custom_metadata):
     custom_metadata_bytes = custom_metadata.encode('utf-8')
 
     # Add the custom metadata to the EXIF dictionary under the "UserComment" tag
+    # https://www.awaresystems.be/imaging/tiff/tifftags/privateifd/exif/usercomment.html
     exif[0x9286]  = custom_metadata_bytes
 
     # Convert the EXIF dictionary back to bytes and save it to the image
