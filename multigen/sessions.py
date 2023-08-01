@@ -2,14 +2,16 @@ import torch
 import os
 import json
 from . import util
+from .prompting import Cfgen
+
 
 class GenSession:
 
-    def __init__(self, session_dir, pipe, confg, name_prefix=""):
+    def __init__(self, session_dir, pipe, config: Cfgen, name_prefix=""):
         self.session_dir = session_dir
         self.pipe = pipe
         self.model_id = pipe._model_id
-        self.confg = confg
+        self.confg = config
         self.last_conf = None
         self.name_prefix = name_prefix
 
