@@ -45,11 +45,23 @@ def add_scheduler(pipe, scheduler):
 
 class BasePipe:
 
-    def __init__(self):
+    def __init__(self, model_id=None):
         self.pipe = None
         self._scheduler = None
         self._hypernets = []
         self._model_id = None
+
+    @property
+    def scheduler(self):
+        return self._scheduler
+
+    @property
+    def hypernets(self):
+        return self._hypernets
+
+    @property
+    def model_id(self):
+        return self._model_id
 
     def try_set_scheduler(self, inputs):
         # allow for scheduler overwrite
@@ -98,8 +110,7 @@ class BasePipe:
 class Prompt2ImPipe(BasePipe):
 
     def __init__(self, model_id, dtype=torch.float16, lpw=False, scheduler=None):
-        super().__init__()
-        self._model_id = model_id
+        super().__init__(model_id=model_id)
         # TODO? Any other custom pipeline?
         self.pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=dtype) if not lpw else \
             StableDiffusionPipeline.from_pretrained(model_id, #StableDiffusionKDiffusionPipeline
@@ -127,8 +138,7 @@ class Prompt2ImPipe(BasePipe):
 class Im2ImPipe(BasePipe):
 
     def __init__(self, model_id, dtype=torch.float16, scheduler=None):
-        super().__init__()
-        self._model_id = model_id
+        super().__init__(model_id=model_id)
         self.pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, torch_dtype=dtype)
         self.pipe.to("cuda")
         self.pipe.vae.enable_tiling()
