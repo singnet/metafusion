@@ -59,9 +59,10 @@ class GenSession:
             image = self.pipe.gen(inputs)
             if save_img:
                 self.last_img_name = self.get_last_file_prefix() + ".png"
-                image.save(self.last_img_name)
+                exif = None
                 if save_metadata:
-                    util.save_metadata(self.last_img_name, json.dumps(self.get_last_conf()))
+                    exif = util.create_exif_metadata(image, json.dumps(self.get_last_conf()))
+                image.save(self.last_img_name, exif=exif)
             if not save_img or force_collect:
                 images += [image]
             # saving cfg only if images are saved and dropping is not requested

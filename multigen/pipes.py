@@ -39,7 +39,7 @@ def add_scheduler(pipe, scheduler):
             pipe.scheduler = scheduler_class.from_config(pipe.scheduler.config)
             return class_name
         except (ImportError, AttributeError) as exc:
-            raise ValueError("Invalid scheduler specified") from exc
+            raise ValueError(f"Invalid scheduler specified {scheduler}") from exc
     return None
 
 
