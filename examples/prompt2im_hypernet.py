@@ -8,8 +8,8 @@ prompt = "photo of a (digitalben:1.1) farmer, man is on a farm next to his horse
 negative_prompt = "(deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation" 
 
 
-path = "/home/imgen/models/icb_diffusers_final/"
-path_hypernet = '/home/imgen/models/hypernetworks/digitalben.pt'
+path = "./models/icb_diffusers_final/"
+path_hypernet = './models/hypernetworks/digitalben.pt'
 pipe = Prompt2ImPipe(path, lpw=True, scheduler='DPMSolverMultistepScheduler')
 pipe.setup(width=512, height=512, guidance_scale=5.5, clip_skip=1)
 pipe.add_hypernet(path_hypernet, 0.65)
