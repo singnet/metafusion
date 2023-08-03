@@ -1,14 +1,17 @@
 import torch
 import os
 import json
+from . import util
+from .prompting import Cfgen
+
 
 class GenSession:
 
-    def __init__(self, session_dir, pipe, confg, name_prefix=""):
+    def __init__(self, session_dir, pipe, config: Cfgen, name_prefix=""):
         self.session_dir = session_dir
         self.pipe = pipe
-        self.model_id = pipe.model_id
-        self.confg = confg
+        self.model_id = pipe._model_id
+        self.confg = config
         self.last_conf = None
         self.name_prefix = name_prefix
 
@@ -35,7 +38,9 @@ class GenSession:
         with open(self.last_cfg_name, 'w') as f:
             print(json.dumps(self.get_last_conf(), indent=4), file=f)
 
-    def gen_sess(self, add_count = 0, save_img=True, drop_cfg=False, force_collect=False, callback=None):
+    def gen_sess(self, add_count = 0, save_img=True,
+                 drop_cfg=False, force_collect=False,
+                 callback=None, save_metadata=False):
         self.confg.max_count += add_count
         self.confg.start_count = self.confg.count
         self.last_img_name = None
@@ -55,6 +60,8 @@ class GenSession:
             if save_img:
                 self.last_img_name = self.get_last_file_prefix() + ".png"
                 image.save(self.last_img_name)
+                if save_metadata:
+                    util.save_metadata(self.last_img_name, json.dumps(self.get_last_conf()))
             if not save_img or force_collect:
                 images += [image]
             # saving cfg only if images are saved and dropping is not requested

@@ -8,6 +8,8 @@ from diffusers import DPMSolverMultistepScheduler
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
+from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
+from transformers import CLIPProcessor, CLIPTextModel
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 # from diffusers import StableDiffusionKDiffusionPipeline
 
@@ -36,16 +38,30 @@ def add_scheduler(pipe, scheduler):
             scheduler_class = getattr(module, class_name)
             pipe.scheduler = scheduler_class.from_config(pipe.scheduler.config)
             return class_name
-        except (ImportError, AttributeError):
-            raise ValueError("Invalid scheduler specified")
+        except (ImportError, AttributeError) as exc:
+            raise ValueError("Invalid scheduler specified") from exc
     return None
 
 
 class BasePipe:
 
-    def __init__(self):
+    def __init__(self, model_id=None):
         self.pipe = None
         self._scheduler = None
+        self._hypernets = []
+        self._model_id = None
+
+    @property
+    def scheduler(self):
+        return self._scheduler
+
+    @property
+    def hypernets(self):
+        return self._hypernets
+
+    @property
+    def model_id(self):
+        return self._model_id
 
     def try_set_scheduler(self, inputs):
         # allow for scheduler overwrite
@@ -56,12 +72,45 @@ class BasePipe:
                 self._scheduler = sch_set
             inputs.pop('scheduler')
 
+    def add_hypernet(self, path, multiplier=None):
+        hypernetwork = Hypernetwork()
+        hypernetwork.load(path)
+        self._hypernets.append(path)
+        hypernetwork.set_multiplier(multiplier if multiplier else 1.0)
+        hypernetwork.to(self.pipe.unet.device)
+        hypernetwork.to(self.pipe.unet.dtype)
+        add_hypernet(self.pipe.unet, hypernetwork)
+
+    def clear_hypernets(self):
+        clear_hypernets(self.pipe.unet)
+        self._hypernets = []
+
+    def get_config(self):
+        cfg = {"hypernetworks": self._hypernets }
+        cfg.update({"model_id": self._model_id })
+        cfg.update(self.pipe_params)
+        return cfg
+
+    def setup(self, width=768, height=768, guidance_scale=7.5, clip_skip=0):
+        self.pipe_params = {
+            "width": width,
+            "height": height,
+            "guidance_scale": guidance_scale
+        }
+        assert clip_skip >= 0
+        assert clip_skip <= 10
+        if clip_skip:
+            prev_encoder = self.pipe.text_encoder
+            self.pipe.text_encoder = CLIPTextModel.from_pretrained(self._model_id, subfolder="text_encoder",
+                                                               num_hidden_layers=12 - clip_skip)
+            self.pipe.text_encoder.to(prev_encoder.device)
+            self.pipe.text_encoder.to(prev_encoder.dtype)
+
 
 class Prompt2ImPipe(BasePipe):
 
     def __init__(self, model_id, dtype=torch.float16, lpw=False, scheduler=None):
-        super().__init__()
-        self.model_id = model_id
+        super().__init__(model_id=model_id)
         # TODO? Any other custom pipeline?
         self.pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=dtype) if not lpw else \
             StableDiffusionPipeline.from_pretrained(model_id, #StableDiffusionKDiffusionPipeline
@@ -77,17 +126,6 @@ class Prompt2ImPipe(BasePipe):
         # self.pipe.vae.enable_xformers_memory_efficient_attention() # attention_op=None)
         self.try_set_scheduler(dict(scheduler=scheduler))
 
-    def setup(self, width=768, height=768):
-        self.pipe_params = {
-            "width": width,
-            "height": height,
-        }
-
-    def get_config(self):
-        cfg = { "model_id": self.model_id }
-        cfg.update(self.pipe_params)
-        return cfg
-
     def gen(self, inputs):
         inputs = {**inputs}
         inputs.update(self.pipe_params)
@@ -100,38 +138,38 @@ class Prompt2ImPipe(BasePipe):
 class Im2ImPipe(BasePipe):
 
     def __init__(self, model_id, dtype=torch.float16, scheduler=None):
-        super().__init__()
-        self.model_id = model_id
+        super().__init__(model_id=model_id)
         self.pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, torch_dtype=dtype)
         self.pipe.to("cuda")
         self.pipe.vae.enable_tiling()
         # setup scheduler
         self.try_set_scheduler(dict(scheduler=scheduler))
+        self._input_image = None
 
     def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None):
         self.fname = fimage
-        self.image = Image.open(fimage).convert("RGB") if image is None else image
+        self._input_image = Image.open(fimage).convert("RGB") if image is None else image
         if scale is not None:
             if not isinstance(scale, list):
-                scale = [8*(int(self.image.size[i]*scale)//8) for i in range(2)]
-            self.image = self.image.resize((scale[0], scale[1]))
+                scale = [8 * (int(self._input_image.size[i] * scale) // 8) for i in range(2)]
+            self._input_image = self._input_image.resize((scale[0], scale[1]))
         self.pipe_params = {
             "strength": strength,
             "guidance_scale": gscale
         }
 
     def get_config(self):
-        cfg = {
-            "model_id": self.model_id,
+        cfg = super().get_config()
+        cfg.update({
             "source_image": self.fname,
-        }
+        })
         cfg.update(self.pipe_params)
         return cfg
 
     def gen(self, inputs):
         inputs = {**inputs}
         inputs.update(self.pipe_params)
-        inputs.update({"image": self.image})
+        inputs.update({"image": self._input_image})
         self.try_set_scheduler(inputs)
         image = self.pipe(**inputs).images[0]
         return image
@@ -163,6 +201,7 @@ class CIm2ImPipe:
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
         self.ctypes = ctypes
+        self._condition_image = None
         cnets = [ControlNetModel.from_pretrained(CIm2ImPipe.cpath+CIm2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
         self.pipe = StableDiffusionControlNetPipeline.from_pretrained(
             model_id, controlnet=cnets, torch_dtype=dtype
@@ -191,7 +230,7 @@ class CIm2ImPipe:
     def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False):
         self.fname = fimage
         image = Image.open(fimage) if image is None else image
-        self.image = self._proc_cimg(np.asarray(image))
+        self._condition_image = self._proc_cimg(np.asarray(image))
         if cscales is None:
             cscales = [CIm2ImPipe.cscalem[c] for c in self.ctypes]
         self.pipe_params = {
@@ -203,31 +242,31 @@ class CIm2ImPipe:
         }
 
     def get_config(self):
-        cfg = {
-            "model_id": self.model_id,
+        cfg = super().get_config()
+        cfg.update({
             "source_image": self.fname,
             "control_type": self.ctypes
-        }
+        })
         cfg.update(self.pipe_params)
         return cfg
 
     def _proc_cimg(self, oriImg):
-        cimage = []
+        condition_image = []
         for c in self.ctypes:
             if c == "canny":
                 image = canny_processor(oriImg)
-                cimage += [Image.fromarray(image)]
+                condition_image += [Image.fromarray(image)]
             elif c == "pose":
                 candidate, subset = self.body_estimation(oriImg)
                 canvas = np.zeros(oriImg.shape, dtype = np.uint8)
                 canvas = self.draw_bodypose(canvas, candidate, subset)
                 #canvas[:, :, [2, 1, 0]]
-                cimage += [Image.fromarray(canvas)]
+                condition_image += [Image.fromarray(canvas)]
             elif c == "soft":
-                cimage += [self.processor(oriImg)]
+                condition_image += [self.processor(oriImg)]
             elif c == "soft-sobel":
                 edge = sobel_processor(oriImg)
-                cimage += [Image.fromarray(edge)]
+                condition_image += [Image.fromarray(edge)]
             elif c == "depth":
                 image = Image.fromarray(oriImg)
                 inputs = self.dprocessor(images=image, return_tensors="pt")
@@ -242,15 +281,15 @@ class CIm2ImPipe:
                 )
                 output = prediction.squeeze().cpu().numpy()
                 formatted = (output * 255 / np.max(output)).astype("uint8")
-                cimage += [Image.fromarray(formatted)]
+                condition_image += [Image.fromarray(formatted)]
             else:
-                cimage += [Image.fromarray(oriImg)]
-        return cimage
+                condition_image += [Image.fromarray(oriImg)]
+        return condition_image
 
     def gen(self, inputs):
         inputs = {**inputs}
         inputs.update(self.pipe_params)
-        inputs.update({"image": self.image})
+        inputs.update({"image": self._condition_image})
         image = self.pipe(**inputs).images[0]
         return image
 
