@@ -49,7 +49,7 @@ class BasePipe:
         self.pipe = None
         self._scheduler = None
         self._hypernets = []
-        self._model_id = None
+        self._model_id = model_id
 
     @property
     def scheduler(self):
@@ -86,8 +86,8 @@ class BasePipe:
         self._hypernets = []
 
     def get_config(self):
-        cfg = {"hypernetworks": self._hypernets }
-        cfg.update({"model_id": self._model_id })
+        cfg = {"hypernetworks": self.hypernets }
+        cfg.update({"model_id": self.model_id })
         cfg.update(self.pipe_params)
         return cfg
 
@@ -101,7 +101,7 @@ class BasePipe:
         assert clip_skip <= 10
         if clip_skip:
             prev_encoder = self.pipe.text_encoder
-            self.pipe.text_encoder = CLIPTextModel.from_pretrained(self._model_id, subfolder="text_encoder",
+            self.pipe.text_encoder = CLIPTextModel.from_pretrained(self.model_id, subfolder="text_encoder",
                                                                num_hidden_layers=12 - clip_skip)
             self.pipe.text_encoder.to(prev_encoder.device)
             self.pipe.text_encoder.to(prev_encoder.dtype)
