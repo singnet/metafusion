@@ -13,7 +13,7 @@ prompt = ["bioinformatics lab with flasks and exotic flowers",
 #pipe = CIm2ImPipe(model_dir+model_id)
 
 pipe = Im2ImPipe(model_dir+model_id)
-pipe.setup("./_projects/biolab/00000.png", strength=0.95, scheduler=get_diffusion_scheduler_names()[0])
+pipe.setup("./_projects/biolab/00000.png", strength=0.95)
 gs = GenSession("./_projects/biolab/modified/", pipe, Cfgen(prompt, nprompt))
 gs.gen_sess(add_count=10)
 
