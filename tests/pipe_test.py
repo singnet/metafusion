@@ -4,7 +4,7 @@ import PIL
 import torch
 import numpy
 
-from multigen.pipes import Prompt2ImPipe
+from multigen import Prompt2ImPipe, Cfgen, GenSession
 
 
 class MyTestCase(unittest.TestCase):
@@ -36,6 +36,26 @@ class MyTestCase(unittest.TestCase):
         diff = self.compute_diff(ref_image, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
+
+    def test_with_session(self):
+        model_id = "icb_diffusers_final"
+        model = os.path.join(self.model_dir, 'icb_diffusers_final')
+
+        nprompt = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers, fewer fingers, lowres, bad hands, duplicate heads, bad anatomy, bad crop"
+
+        prompt = [["+", ["bioinformatics", "bio-tech"], "lab", "with",
+                   ["computers", "flasks"], {"w": "and exotic flowers", "p": 0.5}],
+                  "happy vibrant",
+                  ["green colors", "dream colors", "neon glowing"],
+                  ["8k RAW photo, masterpiece, super quality", "artwork", "unity 3D"],
+                  ["surrealism", "impressionism", "high tech", "cyberpunk"]]
+
+        pipe = Prompt2ImPipe(model, scheduler="DPMSolverMultistepScheduler")
+        pipe.setup(width=512, height=512)
+        gs = GenSession("./gen_batch", pipe, Cfgen(prompt, nprompt))
+        gs.gen_sess(add_count=10)
+        # count number of generated files
+        self.assertEqual(len(os.listdir("./gen_batch")), 20)
 
     def compute_diff(self, im1: PIL.Image.Image, im2: PIL.Image.Image) -> float:
         # convert to numpy array
