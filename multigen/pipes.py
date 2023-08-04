@@ -45,11 +45,25 @@ def add_scheduler(pipe, scheduler):
 
 class BasePipe:
 
-    def __init__(self, model_id=None):
-        self.pipe = None
+    def __init__(self, sd_pipe_class, model_id, scheduler=None, **args):
+        # TODO? Remove scheduler from explicit arguments 
         self._scheduler = None
         self._hypernets = []
         self._model_id = model_id
+        # Creating a stable diffusion pipeine
+        args = {**args}
+        if 'torch_dtype' not in args:
+            args['torch_dtype']=torch.float16
+        self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
+        self.pipe.to("cuda")
+        # self.pipe.enable_attention_slicing()
+        # self.pipe.enable_vae_slicing()
+        self.pipe.vae.enable_tiling()
+        # --- the best one and seems to be enough ---
+        # self.pipe.enable_sequential_cpu_offload()
+        self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
+        # self.pipe.vae.enable_xformers_memory_efficient_attention() # attention_op=None)
+        self.try_set_scheduler(dict(scheduler=scheduler))
 
     @property
     def scheduler(self):
@@ -109,22 +123,12 @@ class BasePipe:
 
 class Prompt2ImPipe(BasePipe):
 
-    def __init__(self, model_id, dtype=torch.float16, lpw=False, scheduler=None):
-        super().__init__(model_id=model_id)
-        # TODO? Any other custom pipeline?
-        self.pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=dtype) if not lpw else \
-            StableDiffusionPipeline.from_pretrained(model_id, #StableDiffusionKDiffusionPipeline
-                                                    custom_pipeline="lpw_stable_diffusion",
-                                                    torch_dtype=dtype)
-        self.pipe.to("cuda")
-        # self.pipe.enable_attention_slicing()
-        # self.pipe.enable_vae_slicing()
-        self.pipe.vae.enable_tiling()
-        # --- the best one and seems to be enough ---
-        # self.pipe.enable_sequential_cpu_offload()
-        self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
-        # self.pipe.vae.enable_xformers_memory_efficient_attention() # attention_op=None)
-        self.try_set_scheduler(dict(scheduler=scheduler))
+    def __init__(self, model_id, lpw=False, **args):
+        if not lpw:
+            super().__init__(StableDiffusionPipeline, model_id=model_id, **args)
+        else:
+            #StableDiffusionKDiffusionPipeline
+            super().__init__(StableDiffusionPipeline, model_id=model_id, custom_pipeline="lpw_stable_diffusion", **args)
 
     def gen(self, inputs):
         inputs = {**inputs}
@@ -137,13 +141,8 @@ class Prompt2ImPipe(BasePipe):
 
 class Im2ImPipe(BasePipe):
 
-    def __init__(self, model_id, dtype=torch.float16, scheduler=None):
-        super().__init__(model_id=model_id)
-        self.pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, torch_dtype=dtype)
-        self.pipe.to("cuda")
-        self.pipe.vae.enable_tiling()
-        # setup scheduler
-        self.try_set_scheduler(dict(scheduler=scheduler))
+    def __init__(self, model_id, **args):
+        super().__init__(StableDiffusionImg2ImgPipeline, model_id=model_id, **args)
         self._input_image = None
 
     def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None):
@@ -175,7 +174,7 @@ class Im2ImPipe(BasePipe):
         return image
 
 
-class CIm2ImPipe:
+class CIm2ImPipe(BasePipe):
 
     # TODO: set path
     cpath = "./models-cn/"
@@ -196,20 +195,16 @@ class CIm2ImPipe:
         "depth": 0.5
     }
 
-    def __init__(self, model_id, dtype=torch.float16, ctypes=["soft"]):
-        self.model_id = model_id
+    def __init__(self, model_id, ctypes=["soft"], **args):
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
         self.ctypes = ctypes
         self._condition_image = None
+        dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
         cnets = [ControlNetModel.from_pretrained(CIm2ImPipe.cpath+CIm2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
-        self.pipe = StableDiffusionControlNetPipeline.from_pretrained(
-            model_id, controlnet=cnets, torch_dtype=dtype
-        )
+        super().__init__(StableDiffusionControlNetPipeline, model_id=model_id, controlnet=cnets, **args)
+        # FIXME: do we need to setup this specific scheduler here?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
-        self.pipe.to("cuda")
-        self.pipe.vae.enable_tiling()
-        self.pipe.enable_xformers_memory_efficient_attention()
 
         if "soft" in ctypes:
             from controlnet_aux import PidiNetDetector, HEDdetector
