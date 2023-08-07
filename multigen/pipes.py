@@ -46,6 +46,7 @@ class BasePipe:
         self._scheduler = None
         self._hypernets = []
         self._model_id = model_id
+        self.pipe_params = dict()
         # Creating a stable diffusion pipeine
         args = {**args}
         if 'torch_dtype' not in args:
