@@ -55,6 +55,7 @@ class GenSession:
             self.last_index = self.confg.count - 1
             self.last_conf = {**inputs}
             # TODO: multiple inputs?
+            # inputs['generator'] = torch.Generator().manual_seed(inputs['generator'])
             inputs['generator'] = torch.cuda.manual_seed(inputs['generator'])
             image = self.pipe.gen(inputs)
             if save_img:
