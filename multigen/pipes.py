@@ -100,8 +100,8 @@ class BasePipe:
         cfg.update(self.pipe_params)
         return cfg
 
-    def setup(self, **args):
-        self.pipe_params = {}
+    def setup(self, steps=50, **args):
+        self.pipe_params = { 'num_inference_steps': steps }
         if 'clip_skip' in args:
             # TODO? add clip_skip to config?
             clip_skip = args['clip_skip']
