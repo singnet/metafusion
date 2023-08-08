@@ -215,9 +215,10 @@ class Cond2ImPipe(BasePipe):
 
     def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
         super().setup(**args)
+        # TODO: allow multiple input images for multiple control nets
         self.fname = fimage
         image = Image.open(fimage) if image is None else image
-        self._condition_image = [image] # np.asarray(image)
+        self._condition_image = [image]
         if cscales is None:
             cscales = [CIm2ImPipe.cscalem[c] for c in self.ctypes]
         self.pipe_params.update({
@@ -270,7 +271,8 @@ class CIm2ImPipe(Cond2ImPipe):
     def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
         super().setup(fimage, width, height, image, cscales, guess_mode, **args)
         # Additionally process the input image
-        self._condition_image = self._proc_cimg(np.asarray(self._condition_image))
+        # REM: CIm2ImPipe expects only one image, which can be the base for multiple control images
+        self._condition_image = self._proc_cimg(np.asarray(self._condition_image[0]))
 
     def _proc_cimg(self, oriImg):
         condition_image = []
