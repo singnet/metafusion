@@ -4,7 +4,7 @@ import torch
 from PIL import Image
 import cv2
 import numpy as np
-from typing import Optional
+from typing import Optional, Type
 from diffusers import DPMSolverMultistepScheduler
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DiffusionPipeline
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
@@ -44,7 +44,7 @@ def add_scheduler(pipe, scheduler):
 class BasePipe:
 
     def __init__(self, model_id: str,
-                 sd_pipe_class: Optional[DiffusionPipeline],
+                 sd_pipe_class: Optional[Type[DiffusionPipeline]],
                  pipe: Optional[DiffusionPipeline] = None, **args):
         self.pipe = pipe
         self._scheduler = None
