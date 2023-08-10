@@ -208,14 +208,15 @@ class CIm2ImPipe(BasePipe):
         "depth": 0.5
     }
 
-    def __init__(self, model_id, ctypes=["soft"], **args):
+    def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
+                 ctypes=["soft"], **args):
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
         self.ctypes = ctypes
         self._condition_image = None
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
         cnets = [ControlNetModel.from_pretrained(CIm2ImPipe.cpath+CIm2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
-        super().__init__(StableDiffusionControlNetPipeline, model_id=model_id, controlnet=cnets, **args)
+        super().__init__(StableDiffusionControlNetPipeline, model_id=model_id, pipe=pipe, controlnet=cnets, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
