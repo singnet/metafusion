@@ -187,7 +187,7 @@ class Im2ImPipe(BasePipe):
         return image
 
 
-class CIm2ImPipe(BasePipe):
+class Cond2ImPipe(BasePipe):
 
     # TODO: set path
     cpath = "./models-cn/"
@@ -221,26 +221,12 @@ class CIm2ImPipe(BasePipe):
         #        should we pass its name in setup to super?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
 
-        if "soft" in ctypes:
-            from controlnet_aux import PidiNetDetector, HEDdetector
-            self.processor = HEDdetector.from_pretrained('lllyasviel/Annotators')
-            #processor = PidiNetDetector.from_pretrained('lllyasviel/Annotators')
-        if "pose" in ctypes:
-            from pytorch_openpose.src.body import Body
-            from pytorch_openpose.src import util
-            self.body_estimation = Body('pytorch_openpose/model/body_pose_model.pth')
-            self.draw_bodypose = util.draw_bodypose
-            #hand_estimation = Hand('model/hand_pose_model.pth')
-        if "depth" in ctypes:
-            from transformers import DPTImageProcessor, DPTForDepthEstimation
-            self.dprocessor = DPTImageProcessor.from_pretrained("./models-other/dpt-large")
-            self.dmodel = DPTForDepthEstimation.from_pretrained("./models-other/dpt-large")
-
     def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
         super().setup(**args)
+        # TODO: allow multiple input images for multiple control nets
         self.fname = fimage
         image = Image.open(fimage) if image is None else image
-        self._condition_image = self._proc_cimg(np.asarray(image))
+        self._condition_image = [image]
         if cscales is None:
             cscales = [CIm2ImPipe.cscalem[c] for c in self.ctypes]
         self.pipe_params.update({
@@ -259,6 +245,42 @@ class CIm2ImPipe(BasePipe):
         })
         cfg.update(self.pipe_params)
         return cfg
+
+    def gen(self, inputs):
+        inputs = {**inputs}
+        inputs.update(self.pipe_params)
+        inputs.update({"image": self._condition_image})
+        image = self.pipe(**inputs).images[0]
+        return image
+
+
+class CIm2ImPipe(Cond2ImPipe):
+
+    def __init__(self, model_id, ctypes=["soft"], **args):
+        super().__init__(model_id, ctypes, **args)
+        # The difference from Cond2ImPipe is that the conditional image is not
+        # taken as input but is obtained from an ordinary image, so this image
+        # should be processed, and the processor depends on the conditioning type
+        if "soft" in ctypes:
+            from controlnet_aux import PidiNetDetector, HEDdetector
+            self.processor = HEDdetector.from_pretrained('lllyasviel/Annotators')
+            #processor = PidiNetDetector.from_pretrained('lllyasviel/Annotators')
+        if "pose" in ctypes:
+            from pytorch_openpose.src.body import Body
+            from pytorch_openpose.src import util
+            self.body_estimation = Body('pytorch_openpose/model/body_pose_model.pth')
+            self.draw_bodypose = util.draw_bodypose
+            #hand_estimation = Hand('model/hand_pose_model.pth')
+        if "depth" in ctypes:
+            from transformers import DPTImageProcessor, DPTForDepthEstimation
+            self.dprocessor = DPTImageProcessor.from_pretrained("./models-other/dpt-large")
+            self.dmodel = DPTForDepthEstimation.from_pretrained("./models-other/dpt-large")
+
+    def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
+        super().setup(fimage, width, height, image, cscales, guess_mode, **args)
+        # Additionally process the input image
+        # REM: CIm2ImPipe expects only one image, which can be the base for multiple control images
+        self._condition_image = self._proc_cimg(np.asarray(self._condition_image[0]))
 
     def _proc_cimg(self, oriImg):
         condition_image = []
@@ -295,13 +317,6 @@ class CIm2ImPipe(BasePipe):
             else:
                 condition_image += [Image.fromarray(oriImg)]
         return condition_image
-
-    def gen(self, inputs):
-        inputs = {**inputs}
-        inputs.update(self.pipe_params)
-        inputs.update({"image": self._condition_image})
-        image = self.pipe(**inputs).images[0]
-        return image
 
 def canny_processor(oriImg):
     low_threshold = 100
