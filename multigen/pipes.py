@@ -4,8 +4,9 @@ import torch
 from PIL import Image
 import cv2
 import numpy as np
+from typing import Optional, Type
 from diffusers import DPMSolverMultistepScheduler
-from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DiffusionPipeline
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
@@ -42,7 +43,10 @@ def add_scheduler(pipe, scheduler):
 
 class BasePipe:
 
-    def __init__(self, sd_pipe_class, model_id, **args):
+    def __init__(self, model_id: str,
+                 sd_pipe_class: Optional[Type[DiffusionPipeline]],
+                 pipe: Optional[DiffusionPipeline] = None, **args):
+        self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
         self._model_id = model_id
@@ -51,7 +55,8 @@ class BasePipe:
         args = {**args}
         if 'torch_dtype' not in args:
             args['torch_dtype']=torch.float16
-        self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
+        if self.pipe is None:
+            self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
         self.pipe.to("cuda")
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
@@ -120,12 +125,14 @@ class BasePipe:
 
 class Prompt2ImPipe(BasePipe):
 
-    def __init__(self, model_id, lpw=False, **args):
+    def __init__(self, model_id: str,
+                 pipe: Optional[StableDiffusionPipeline] = None,
+                 lpw=False, **args):
         if not lpw:
-            super().__init__(StableDiffusionPipeline, model_id=model_id, **args)
+            super().__init__(model_id=model_id, sd_pipe_class=StableDiffusionPipeline, pipe=pipe, **args)
         else:
             #StableDiffusionKDiffusionPipeline
-            super().__init__(StableDiffusionPipeline, model_id=model_id, custom_pipeline="lpw_stable_diffusion", **args)
+            super().__init__(model_id=model_id, sd_pipe_class=StableDiffusionPipeline, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
 
     def setup(self, width=768, height=768, guidance_scale=7.5, **args):
         super().setup(**args)
@@ -146,8 +153,8 @@ class Prompt2ImPipe(BasePipe):
 
 class Im2ImPipe(BasePipe):
 
-    def __init__(self, model_id, **args):
-        super().__init__(StableDiffusionImg2ImgPipeline, model_id=model_id, **args)
+    def __init__(self, model_id, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **args):
+        super().__init__(model_id=model_id, sd_pipe_class=StableDiffusionImg2ImgPipeline, pipe=pipe, **args)
         self._input_image = None
 
     def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None, **args):
@@ -201,14 +208,15 @@ class Cond2ImPipe(BasePipe):
         "depth": 0.5
     }
 
-    def __init__(self, model_id, ctypes=["soft"], **args):
+    def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
+                 ctypes=["soft"], **args):
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
         self.ctypes = ctypes
         self._condition_image = None
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
         cnets = [ControlNetModel.from_pretrained(CIm2ImPipe.cpath+CIm2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
-        super().__init__(StableDiffusionControlNetPipeline, model_id=model_id, controlnet=cnets, **args)
+        super().__init__(StableDiffusionControlNetPipeline, model_id=model_id, pipe=pipe, controlnet=cnets, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
