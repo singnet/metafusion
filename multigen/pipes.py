@@ -8,6 +8,7 @@ from typing import Optional, Type
 from diffusers import DPMSolverMultistepScheduler
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DiffusionPipeline
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
+from diffusers import StableDiffusionControlNetInpaintPipeline, DDIMScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
 from transformers import CLIPProcessor, CLIPTextModel
@@ -197,7 +198,8 @@ class Cond2ImPipe(BasePipe):
         "ip2p": "control_v11e_sd15_ip2p",
         "soft-sobel": "control_v11p_sd15_softedge",
         "soft": "control_v11p_sd15_softedge",
-        "depth": "control_v11f1p_sd15_depth"
+        "depth": "control_v11f1p_sd15_depth",
+        "inpaint": "control_v11p_sd15_inpaint"
     }
     cscalem = {
         "canny": 0.75,
@@ -205,7 +207,8 @@ class Cond2ImPipe(BasePipe):
         "ip2p": 0.5,
         "soft-sobel": 0.3,
         "soft": 0.95, #0.5
-        "depth": 0.5
+        "depth": 0.5,
+        "inpaint": 1.0
     }
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
@@ -216,7 +219,7 @@ class Cond2ImPipe(BasePipe):
         self._condition_image = None
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
         cnets = [ControlNetModel.from_pretrained(CIm2ImPipe.cpath+CIm2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
-        super().__init__(StableDiffusionControlNetPipeline, model_id=model_id, pipe=pipe, controlnet=cnets, **args)
+        super().__init__(sd_pipe_class=StableDiffusionControlNetPipeline, model_id=model_id, pipe=pipe, controlnet=cnets, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
@@ -256,8 +259,9 @@ class Cond2ImPipe(BasePipe):
 
 class CIm2ImPipe(Cond2ImPipe):
 
-    def __init__(self, model_id, ctypes=["soft"], **args):
-        super().__init__(model_id, ctypes, **args)
+    def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
+                 ctypes=["soft"], **args):
+        super().__init__(model_id=model_id, pipe=pipe, ctypes=ctypes, **args)
         # The difference from Cond2ImPipe is that the conditional image is not
         # taken as input but is obtained from an ordinary image, so this image
         # should be processed, and the processor depends on the conditioning type
@@ -317,6 +321,57 @@ class CIm2ImPipe(Cond2ImPipe):
             else:
                 condition_image += [Image.fromarray(oriImg)]
         return condition_image
+
+
+# TODO: does it make sense to inherint it from Cond2Im or CIm2Im ?
+class InpaintingPipe(BasePipe):
+
+    def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
+                 **args):
+        dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
+        cnet = ControlNetModel.from_pretrained(
+            Cond2ImPipe.cpath+Cond2ImPipe.cmodels["inpaint"], torch_dtype=dtype)
+        super().__init__(sd_pipe_class=StableDiffusionControlNetInpaintPipeline, model_id=model_id, pipe=pipe, controlnet=cnet, **args)
+        # FIXME: do we need to setup this specific scheduler here?
+        #        should we pass its name in setup to super?
+        self.pipe.scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config)
+
+    def setup(self, fimage, mask_image, image=None, **args):
+        super().setup(**args)
+        # TODO: allow multiple input images for multiple control nets
+        self.fname = fimage
+        self._init_image = Image.open(fimage) if image is None else image
+        self._mask_image = mask_image
+        self._control_image = self._make_inpaint_condition(self._init_image, mask_image)
+        # self._condition_image = [image]
+        self.pipe_params.update({
+            # TODO: check if condtitioning_scale and guess_mode are in this pipeline and what is their effect
+            # "controlnet_conditioning_scale": cscales,
+            # "guess_mode": guess_mode,
+            "eta": 0.1, # FIXME: is it needed?
+            "num_inference_steps": 20
+        })
+
+    def gen(self, inputs):
+        inputs = {**inputs}
+        inputs.update(self.pipe_params)
+        inputs.update({
+            "image": self._init_image,
+            "mask_image": self._mask_image,
+            "control_image": self._control_image
+        })
+        image = self.pipe(**inputs).images[0]
+        return image
+
+    def _make_inpaint_condition(self, image, image_mask):
+        image = np.array(image.convert("RGB")).astype(np.float32) / 255.0
+        image_mask = np.array(image_mask.convert("L")).astype(np.float32) / 255.0
+        assert image.shape[0:1] == image_mask.shape[0:1], "image and image_mask must have the same image size"
+        image[image_mask > 0.5] = -1.0  # set as masked pixel
+        image = np.expand_dims(image, 0).transpose(0, 3, 1, 2)
+        image = torch.from_numpy(image)
+        return image
+
 
 def canny_processor(oriImg):
     low_threshold = 100
