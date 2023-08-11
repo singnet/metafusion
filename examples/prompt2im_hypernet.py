@@ -10,8 +10,8 @@ negative_prompt = "(deformed, distorted, disfigured:1.3), poorly drawn, bad anat
 
 path = "./models/icb_diffusers_final/"
 path_hypernet = './models/hypernetworks/digitalben.pt'
-pipe = Prompt2ImPipe(path, lpw=True, scheduler='DPMSolverMultistepScheduler')
-pipe.setup(width=512, height=512, guidance_scale=5.5, clip_skip=1)
+pipe = Prompt2ImPipe(path, lpw=True)
+pipe.setup(width=512, height=512, guidance_scale=5.5, clip_skip=1, scheduler='DPMSolverMultistepScheduler')
 pipe.add_hypernet(path_hypernet, 0.65)
 # pipe.clear_hypernets()
 

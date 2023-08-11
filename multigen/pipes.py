@@ -1,4 +1,6 @@
 import importlib
+
+import PIL
 import torch
 
 from PIL import Image
@@ -124,6 +126,7 @@ class BasePipe:
             # TODO? add scheduler to config?
             self.try_set_scheduler(dict(scheduler=args['scheduler']))
 
+
 class Prompt2ImPipe(BasePipe):
 
     def __init__(self, model_id: str,
@@ -143,8 +146,8 @@ class Prompt2ImPipe(BasePipe):
             "guidance_scale": guidance_scale
         })
 
-    def gen(self, inputs):
-        inputs = {**inputs}
+    def gen(self, inputs: dict) -> PIL.Image.Image:
+        inputs = inputs.copy()
         inputs.update(self.pipe_params)
         # allow for scheduler overwrite
         self.try_set_scheduler(inputs)
@@ -158,18 +161,17 @@ class Im2ImPipe(BasePipe):
         super().__init__(model_id=model_id, sd_pipe_class=StableDiffusionImg2ImgPipeline, pipe=pipe, **args)
         self._input_image = None
 
-    def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None, **args):
+    def setup(self, img_path, image=None, strength=0.75, gscale=7.5, scale=None, **args):
         super().setup(**args)
-        self.fname = fimage
-        self._input_image = Image.open(fimage).convert("RGB") if image is None else image
+        self.fname = img_path
+        self._input_image = Image.open(img_path).convert("RGB") if image is None else image
         if scale is not None:
             if not isinstance(scale, list):
                 scale = [8 * (int(self._input_image.size[i] * scale) // 8) for i in range(2)]
             self._input_image = self._input_image.resize((scale[0], scale[1]))
         self.pipe_params.update({
             "strength": strength,
-            "guidance_scale": gscale
-        })
+            "guidance_scale": gscale})
 
     def get_config(self):
         cfg = super().get_config()
@@ -179,8 +181,8 @@ class Im2ImPipe(BasePipe):
         cfg.update(self.pipe_params)
         return cfg
 
-    def gen(self, inputs):
-        inputs = {**inputs}
+    def gen(self, inputs: dict) -> PIL.Image.Image:
+        inputs = inputs.copy()
         inputs.update(self.pipe_params)
         inputs.update({"image": self._input_image})
         self.try_set_scheduler(inputs)
@@ -189,6 +191,9 @@ class Im2ImPipe(BasePipe):
 
 
 class Cond2ImPipe(BasePipe):
+    """
+    Base class for ControlNet pipelines
+    """
 
     # TODO: set path
     cpath = "./models-cn/"
@@ -218,20 +223,20 @@ class Cond2ImPipe(BasePipe):
         self.ctypes = ctypes
         self._condition_image = None
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
-        cnets = [ControlNetModel.from_pretrained(CIm2ImPipe.cpath+CIm2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
+        cnets = [ControlNetModel.from_pretrained(Cond2ImPipe.cpath+Cond2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
         super().__init__(sd_pipe_class=StableDiffusionControlNetPipeline, model_id=model_id, pipe=pipe, controlnet=cnets, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
 
-    def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
+    def setup(self, img_path, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
         super().setup(**args)
         # TODO: allow multiple input images for multiple control nets
-        self.fname = fimage
-        image = Image.open(fimage) if image is None else image
+        self.fname = img_path
+        image = Image.open(img_path) if image is None else image
         self._condition_image = [image]
         if cscales is None:
-            cscales = [CIm2ImPipe.cscalem[c] for c in self.ctypes]
+            cscales = [Cond2ImPipe.cscalem[c] for c in self.ctypes]
         self.pipe_params.update({
             "width": image.size[0] if width is None else width,
             "height": image.size[1] if height is None else height,
@@ -257,8 +262,10 @@ class Cond2ImPipe(BasePipe):
         return image
 
 
-class CIm2ImPipe(Cond2ImPipe):
-
+class ControlNetIm2ImPipe(Cond2ImPipe):
+    """
+    ControlNet pipeline with conditional image generation
+    """
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  ctypes=["soft"], **args):
         super().__init__(model_id=model_id, pipe=pipe, ctypes=ctypes, **args)
@@ -280,8 +287,8 @@ class CIm2ImPipe(Cond2ImPipe):
             self.dprocessor = DPTImageProcessor.from_pretrained("./models-other/dpt-large")
             self.dmodel = DPTForDepthEstimation.from_pretrained("./models-other/dpt-large")
 
-    def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
-        super().setup(fimage, width, height, image, cscales, guess_mode, **args)
+    def setup(self, img_path, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
+        super().setup(img_path, width, height, image, cscales, guess_mode, **args)
         # Additionally process the input image
         # REM: CIm2ImPipe expects only one image, which can be the base for multiple control images
         self._condition_image = self._proc_cimg(np.asarray(self._condition_image[0]))

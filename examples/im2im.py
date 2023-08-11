@@ -10,7 +10,7 @@ nprompt = "jpeg artifacts, blur, distortion, watermark, extra fingers, fewer fin
 prompt = ["bioinformatics lab with flasks and exotic flowers",
           "happy vibrant", "green colors", "artwork", "high tech"]
 
-#pipe = CIm2ImPipe(model_dir+model_id)
+#pipe = ControlNetIm2ImPipe(model_dir+model_id)
 
 pipe = Im2ImPipe(model_dir+model_id)
 pipe.setup("./_projects/biolab/00000.png", strength=0.95, scheduler=get_diffusion_scheduler_names()[0])
