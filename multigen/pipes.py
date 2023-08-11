@@ -197,6 +197,7 @@ class Cond2ImPipe(BasePipe):
 
     # TODO: set path
     cpath = "./models-cn/"
+
     cmodels = {
         "canny": "sd-controlnet-canny",
         "pose": "control_v11p_sd15_openpose",
@@ -206,7 +207,8 @@ class Cond2ImPipe(BasePipe):
         "depth": "control_v11f1p_sd15_depth",
         "inpaint": "control_v11p_sd15_inpaint"
     }
-    cscalem = {
+
+    default_cscales = {
         "canny": 0.75,
         "pose": 1.0,
         "ip2p": 0.5,
@@ -220,7 +222,7 @@ class Cond2ImPipe(BasePipe):
                  ctypes=["soft"], **args):
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
-        self.ctypes = ctypes
+        self.control_types = ctypes
         self._condition_image = None
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
         cnets = [ControlNetModel.from_pretrained(Cond2ImPipe.cpath+Cond2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
@@ -236,7 +238,7 @@ class Cond2ImPipe(BasePipe):
         image = Image.open(img_path) if image is None else image
         self._condition_image = [image]
         if cscales is None:
-            cscales = [Cond2ImPipe.cscalem[c] for c in self.ctypes]
+            cscales = [self.default_cscales[c] for c in self.control_types]
         self.pipe_params.update({
             "width": image.size[0] if width is None else width,
             "height": image.size[1] if height is None else height,
@@ -249,7 +251,7 @@ class Cond2ImPipe(BasePipe):
         cfg = super().get_config()
         cfg.update({
             "source_image": self.fname,
-            "control_type": self.ctypes
+            "control_type": self.control_types
         })
         cfg.update(self.pipe_params)
         return cfg
@@ -262,7 +264,7 @@ class Cond2ImPipe(BasePipe):
         return image
 
 
-class ControlNetIm2ImPipe(Cond2ImPipe):
+class ControlNet2ImPipe(Cond2ImPipe):
     """
     ControlNet pipeline with conditional image generation
     """
@@ -295,7 +297,7 @@ class ControlNetIm2ImPipe(Cond2ImPipe):
 
     def _proc_cimg(self, oriImg):
         condition_image = []
-        for c in self.ctypes:
+        for c in self.control_types:
             if c == "canny":
                 image = canny_processor(oriImg)
                 condition_image += [Image.fromarray(image)]
