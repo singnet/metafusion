@@ -127,7 +127,7 @@ class BasePipe:
             self.try_set_scheduler(dict(scheduler=args['scheduler']))
 
 
-class Prompt2ImPipe(BasePipe):
+class Prompt2Im(BasePipe):
 
     def __init__(self, model_id: str,
                  pipe: Optional[StableDiffusionPipeline] = None,
@@ -155,7 +155,7 @@ class Prompt2ImPipe(BasePipe):
         return image
 
 
-class Im2ImPipe(BasePipe):
+class Im2Im(BasePipe):
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **args):
         super().__init__(model_id=model_id, sd_pipe_class=StableDiffusionImg2ImgPipeline, pipe=pipe, **args)
@@ -190,7 +190,7 @@ class Im2ImPipe(BasePipe):
         return image
 
 
-class Cond2ImPipe(BasePipe):
+class Cond2Im(BasePipe):
     """
     Base class for ControlNet pipelines
     """
@@ -225,7 +225,7 @@ class Cond2ImPipe(BasePipe):
         self.control_types = ctypes
         self._condition_image = None
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
-        cnets = [ControlNetModel.from_pretrained(Cond2ImPipe.cpath+Cond2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
+        cnets = [ControlNetModel.from_pretrained(Cond2Im.cpath + Cond2Im.cmodels[c], torch_dtype=dtype) for c in ctypes]
         super().__init__(sd_pipe_class=StableDiffusionControlNetPipeline, model_id=model_id, pipe=pipe, controlnet=cnets, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
@@ -264,14 +264,14 @@ class Cond2ImPipe(BasePipe):
         return image
 
 
-class ControlNet2ImPipe(Cond2ImPipe):
+class ControlNet2Im(Cond2Im):
     """
     ControlNet pipeline with conditional image generation
     """
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  ctypes=["soft"], **args):
         super().__init__(model_id=model_id, pipe=pipe, ctypes=ctypes, **args)
-        # The difference from Cond2ImPipe is that the conditional image is not
+        # The difference from Cond2Im is that the conditional image is not
         # taken as input but is obtained from an ordinary image, so this image
         # should be processed, and the processor depends on the conditioning type
         if "soft" in ctypes:
@@ -333,13 +333,13 @@ class ControlNet2ImPipe(Cond2ImPipe):
 
 
 # TODO: does it make sense to inherint it from Cond2Im or CIm2Im ?
-class InpaintingPipe(BasePipe):
+class Inpainting(BasePipe):
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  **args):
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
         cnet = ControlNetModel.from_pretrained(
-            Cond2ImPipe.cpath+Cond2ImPipe.cmodels["inpaint"], torch_dtype=dtype)
+            Cond2Im.cpath + Cond2Im.cmodels["inpaint"], torch_dtype=dtype)
         super().__init__(sd_pipe_class=StableDiffusionControlNetInpaintPipeline, model_id=model_id, pipe=pipe, controlnet=cnet, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?

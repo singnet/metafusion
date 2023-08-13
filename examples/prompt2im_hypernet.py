@@ -1,6 +1,6 @@
 from multigen.prompting import Cfgen
 from multigen.sessions import GenSession
-from multigen.pipes import Prompt2ImPipe
+from multigen.pipes import Prompt2Im
 
 
 prompt = "photo of a (digitalben:1.1) farmer, man is on a farm next to his horse, 24mm, 4k textures, soft cinematic light, RAW photo, photorealism, photorealistic, highly detailed, sharp focus, soothing tones, insane details, intricate details, hyperdetailed, low contrast, soft cinematic light, dim colors, exposure blend, hdr, faded" 
@@ -10,7 +10,7 @@ negative_prompt = "(deformed, distorted, disfigured:1.3), poorly drawn, bad anat
 
 path = "./models/icb_diffusers_final/"
 path_hypernet = './models/hypernetworks/digitalben.pt'
-pipe = Prompt2ImPipe(path, lpw=True)
+pipe = Prompt2Im(path, lpw=True)
 pipe.setup(width=512, height=512, guidance_scale=5.5, clip_skip=1, scheduler='DPMSolverMultistepScheduler')
 pipe.add_hypernet(path_hypernet, 0.65)
 # pipe.clear_hypernets()

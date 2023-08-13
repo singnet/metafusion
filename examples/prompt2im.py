@@ -1,6 +1,6 @@
 from multigen.prompting import Cfgen
 from multigen.sessions import GenSession
-from multigen.pipes import Prompt2ImPipe
+from multigen.pipes import Prompt2Im
 
 model_dir = "./models-sd/"
 model_id = "icbinp"
@@ -15,7 +15,7 @@ prompt = [["+", ["bioinformatics", "bio-tech"], "lab", "with",
           ["surrealism", "impressionism", "high tech", "cyberpunk"]]
 
 
-pipe = Prompt2ImPipe(model_dir+model_id)
+pipe = Prompt2Im(model_dir + model_id)
 pipe.setup(width=768, height=768)
 gs = GenSession("./_projects/biolab", pipe, Cfgen(prompt, nprompt))
 gs.gen_sess(add_count=10)
