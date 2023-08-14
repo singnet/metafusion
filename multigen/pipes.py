@@ -163,7 +163,7 @@ class Im2ImPipe(BasePipe):
 
     def setup(self, img_path, image=None, strength=0.75, gscale=7.5, scale=None, **args):
         super().setup(**args)
-        self.fname = img_path
+        self.img_path = img_path
         self._input_image = Image.open(img_path).convert("RGB") if image is None else image
         if scale is not None:
             if not isinstance(scale, list):
@@ -176,7 +176,7 @@ class Im2ImPipe(BasePipe):
     def get_config(self):
         cfg = super().get_config()
         cfg.update({
-            "source_image": self.fname,
+            "source_image": self.img_path,
         })
         cfg.update(self.pipe_params)
         return cfg
@@ -206,7 +206,7 @@ class Cond2ImPipe(BasePipe):
         "depth": "control_v11f1p_sd15_depth",
         "inpaint": "control_v11p_sd15_inpaint"
     }
-    cscalem = {
+    default_cs = {
         "canny": 0.75,
         "pose": 1.0,
         "ip2p": 0.5,
@@ -220,10 +220,10 @@ class Cond2ImPipe(BasePipe):
                  ctypes=["soft"], **args):
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
-        self.ctypes = ctypes
+        self.control_types = ctypes
         self._condition_image = None
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
-        cnets = [ControlNetModel.from_pretrained(Cond2ImPipe.cpath+Cond2ImPipe.cmodels[c], torch_dtype=dtype) for c in ctypes]
+        cnets = [ControlNetModel.from_pretrained(self.cpath+self.cmodels[c], torch_dtype=dtype) for c in ctypes]
         super().__init__(sd_pipe_class=StableDiffusionControlNetPipeline, model_id=model_id, pipe=pipe, controlnet=cnets, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
@@ -232,11 +232,11 @@ class Cond2ImPipe(BasePipe):
     def setup(self, img_path, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
         super().setup(**args)
         # TODO: allow multiple input images for multiple control nets
-        self.fname = img_path
+        self.img_path = img_path
         image = Image.open(img_path) if image is None else image
         self._condition_image = [image]
         if cscales is None:
-            cscales = [Cond2ImPipe.cscalem[c] for c in self.ctypes]
+            cscales = [self.default_cs[c] for c in self.control_types]
         self.pipe_params.update({
             "width": image.size[0] if width is None else width,
             "height": image.size[1] if height is None else height,
@@ -248,8 +248,8 @@ class Cond2ImPipe(BasePipe):
     def get_config(self):
         cfg = super().get_config()
         cfg.update({
-            "source_image": self.fname,
-            "control_type": self.ctypes
+            "source_image": self.img_path,
+            "control_type": self.control_types
         })
         cfg.update(self.pipe_params)
         return cfg
@@ -262,7 +262,7 @@ class Cond2ImPipe(BasePipe):
         return image
 
 
-class ControlNetIm2ImPipe(Cond2ImPipe):
+class CIm2ImPipe(Cond2ImPipe):
     """
     ControlNet pipeline with conditional image generation
     """
@@ -295,7 +295,7 @@ class ControlNetIm2ImPipe(Cond2ImPipe):
 
     def _proc_cimg(self, oriImg):
         condition_image = []
-        for c in self.ctypes:
+        for c in self.control_types:
             if c == "canny":
                 image = canny_processor(oriImg)
                 condition_image += [Image.fromarray(image)]
@@ -343,11 +343,11 @@ class InpaintingPipe(BasePipe):
         #        should we pass its name in setup to super?
         self.pipe.scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config)
 
-    def setup(self, fimage, mask_image, image=None, **args):
+    def setup(self, img_path, mask_image, image=None, **args):
         super().setup(**args)
         # TODO: allow multiple input images for multiple control nets
-        self.fname = fimage
-        self._init_image = Image.open(fimage) if image is None else image
+        self.img_path = img_path
+        self._init_image = Image.open(img_path) if image is None else image
         self._mask_image = mask_image
         self._control_image = self._make_inpaint_condition(self._init_image, mask_image)
         # self._condition_image = [image]
