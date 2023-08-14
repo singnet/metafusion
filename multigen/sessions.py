@@ -3,15 +3,16 @@ import os
 import json
 from . import util
 from .prompting import Cfgen
+from .pipes import BasePipe
 
 
 class GenSession:
 
-    def __init__(self, session_dir, pipe, config: Cfgen, name_prefix=""):
+    def __init__(self, session_dir: str, pipe: BasePipe, config: Cfgen, name_prefix=""):
         self.session_dir = session_dir
-        self.pipe = pipe
-        self.model_id = pipe._model_id
-        self.confg = config
+        self.pipe: BasePipe = pipe
+        self.model_id: str = pipe._model_id
+        self.confg: Cfgen = config
         self.last_conf = None
         self.name_prefix = name_prefix
 

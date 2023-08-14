@@ -5,7 +5,7 @@ import PIL
 import torch
 import numpy
 
-from multigen import Prompt2ImPipe, Cfgen, GenSession
+from multigen import Prompt2Im, Cfgen, GenSession
 from dummy import DummyDiffusionPipeline
 
 
@@ -22,7 +22,7 @@ class MyTestCase(unittest.TestCase):
     def test_basic_txt2im(self):
         model = "runwayml/stable-diffusion-v1-5"
         # create pipe
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline)
+        pipe = Prompt2Im(model, pipe=self._pipeline)
         pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler")
         seed = 49045438434843
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
@@ -58,7 +58,7 @@ class MyTestCase(unittest.TestCase):
                   ["8k RAW photo, masterpiece, super quality", "artwork", "unity 3D"],
                   ["surrealism", "impressionism", "high tech", "cyberpunk"]]
 
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline)
+        pipe = Prompt2Im(model, pipe=self._pipeline)
         pipe.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler")
         # remove directory if it exists
         dirname = "./gen_batch"
