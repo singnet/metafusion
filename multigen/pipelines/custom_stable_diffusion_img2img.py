@@ -35,6 +35,14 @@ class CustomStableDiffusionImg2ImgPipeline(StableDiffusionImg2ImgPipeline):
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: int = 1,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+        mask: Union[
+                torch.FloatTensor,
+                PIL.Image.Image,
+                np.ndarray,
+                List[torch.FloatTensor],
+                List[PIL.Image.Image],
+                List[np.ndarray],
+            ] = None,
     ):
         r"""
         The call function to the pipeline for generation.
@@ -88,7 +96,8 @@ class CustomStableDiffusionImg2ImgPipeline(StableDiffusionImg2ImgPipeline):
             cross_attention_kwargs (`dict`, *optional*):
                 A kwargs dictionary that if specified is passed along to the [`AttentionProcessor`] as defined in
                 [`self.processor`](https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/attention_processor.py).
-
+            mask (`torch.FloatTensor`, `PIL.Image.Image`, `np.ndarray`, `List[torch.FloatTensor]`, `List[PIL.Image.Image]`, or `List[np.ndarray]`, *optional*):
+                A mask with non-zero elements for the area to be inpainted. If not specified, no mask is applied.
         Examples:
 
         Returns:
@@ -141,6 +150,11 @@ class CustomStableDiffusionImg2ImgPipeline(StableDiffusionImg2ImgPipeline):
         latents = self.prepare_latents(
             image, latent_timestep, batch_size, num_images_per_prompt, prompt_embeds.dtype, device, generator
         )
+        init_latents = [
+            self.vae.encode(image[i : i + 1]).latent_dist.mean for i in range(batch_size)
+        ]
+        init_latents = torch.cat(init_latents, dim=0)
+        decoded_latents = self.vae.decode(init_latents)
 
         # 7. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
@@ -175,9 +189,24 @@ class CustomStableDiffusionImg2ImgPipeline(StableDiffusionImg2ImgPipeline):
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
-
+        if mask is not None:
+            latent_mask = list()
+            if not isinstance(mask, list):
+                tmp_mask = [mask]
+            else:
+                tmp_mask = mask
+            _, l_channels, l_height, l_width = latents.shape
+            for m in tmp_mask:
+                if not isinstance(m, PIL.Image.Image):
+                    m = self.image_processor.numpy_to_pil(m)[0]
+                m = m.convert('L')
+                resized = self.image_processor.resize(m, l_height, l_width)
+                latent_mask.append(np.repeat(np.array(resized)[np.newaxis, :, :], l_channels, axis=0))
+            latent_mask = torch.as_tensor(np.stack(latent_mask)).to(latents)
+            latents = latents * latent_mask + init_latents * (1 - latent_mask)
         if not output_type == "latent":
-            image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
+            scaled = latents / self.vae.config.scaling_factor
+            image = self.vae.decode(scaled, return_dict=False)[0]
             image, has_nsfw_concept = self.run_safety_checker(image, device, prompt_embeds.dtype)
         else:
             image = latents
