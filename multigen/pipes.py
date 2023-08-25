@@ -1,7 +1,10 @@
 import importlib
+
+import PIL
+import numpy
 import torch
 
-from PIL import Image
+from PIL import Image, ImageFilter
 import cv2
 import numpy as np
 from typing import Optional, Type
@@ -10,6 +13,8 @@ from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, D
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 from diffusers import StableDiffusionControlNetInpaintPipeline, DDIMScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
+
+from multigen.pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
 from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
 from transformers import CLIPProcessor, CLIPTextModel
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
@@ -154,8 +159,10 @@ class Prompt2ImPipe(BasePipe):
 
 class Im2ImPipe(BasePipe):
 
+    _class = StableDiffusionImg2ImgPipeline
+
     def __init__(self, model_id, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **args):
-        super().__init__(model_id=model_id, sd_pipe_class=StableDiffusionImg2ImgPipeline, pipe=pipe, **args)
+        super().__init__(model_id=model_id, sd_pipe_class=self._class, pipe=pipe, **args)
         self._input_image = None
 
     def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None, **args):
@@ -186,6 +193,53 @@ class Im2ImPipe(BasePipe):
         self.try_set_scheduler(inputs)
         image = self.pipe(**inputs).images[0]
         return image
+
+
+class MaskedIm2ImPipe(Im2ImPipe):
+    _class = MaskedStableDiffusionImg2ImgPipeline
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._mask = None
+        self._image_painted = None
+        self._original_image = None
+        self._mask_blur = None
+
+    def setup(self, original_image=None, image_painted=None, mask=None, blur=4, **kwargs):
+        self._original_image = original_image
+        self._image_painted = image_painted
+        # there are two options:
+        # 1. mask is provided
+        # 2. mask is computed from difference between original_image and image_painted
+        if image_painted is not None:
+            neq = numpy.any(numpy.array(self._original_image) != numpy.array(self._image_painted), axis=-1)
+            mask = neq.astype(numpy.uint8) * 255
+        else:
+            assert mask is not None
+        self._mask = mask
+        self._image_painted = image_painted
+        input_image = image_painted if image_painted is not None else original_image
+        input_image = numpy.array(input_image)
+        super().setup(fimage=None, image=input_image / input_image.max(), **kwargs)
+        pil_mask = mask
+        if not isinstance(self._mask, PIL.Image.Image):
+            pil_mask = PIL.Image.fromarray(mask)
+            if pil_mask.mode != "L":
+                pil_mask = pil_mask.convert("L")
+        mask_blur = pil_mask.filter(ImageFilter.GaussianBlur(radius=blur))
+        mask_blur = numpy.array(mask_blur)
+        self._mask_blur = numpy.tile(mask_blur / mask_blur.max(), (3, 1, 1)).transpose(1,2,0)
+
+    def gen(self, inputs):
+        inputs = inputs.copy()
+        inputs.update(mask=self._mask)
+        img_gen = super().gen(inputs)
+
+        # compose with original using mask
+        img_compose = self._mask_blur * img_gen + (1 - self._mask_blur) * self._original_image
+        # convert to PIL image
+        img_compose = PIL.Image.fromarray(img_compose.astype(numpy.uint8))
+        return img_compose
 
 
 class Cond2ImPipe(BasePipe):

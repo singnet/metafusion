@@ -15,13 +15,16 @@ def main():
     # read image with mask painted over
     img_paint = numpy.array(PIL.Image.open("./mech_beard_sigm_mask.png"))
 
-    seed = random.randint(0, 111000000000)
-    seed = 5
+    scheduler = 'DPMSolverMultistepScheduler'
+    scheduler = "EulerAncestralDiscreteScheduler"
+
     pipe = MaskedIm2ImPipe(model_dir+model_id)
-    pipe.setup(original_image=img, image_painted=img_paint, strength=0.9, scheduler="EulerAncestralDiscreteScheduler", guidance_scale=7, clip_skip=2)
-    img_gen = pipe.gen(dict(prompt="a man wearing a mask",
+    pipe.setup(original_image=img, image_painted=img_paint, strength=0.75,
+               scheduler=scheduler, guidance_scale=7, clip_skip=3)
+    for seed in range(10):
+        img_gen = pipe.gen(dict(prompt="a man wearing a mask",
                             generator=torch.cuda.manual_seed(seed)))
-    img_gen.save("./mech_beard_sigm_sketch_gen.png")
+        img_gen.save("./result{0}.png".format(seed))
 
 
 if __name__ == "__main__":
