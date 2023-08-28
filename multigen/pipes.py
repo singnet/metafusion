@@ -11,7 +11,7 @@ from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCM
 from diffusers import StableDiffusionControlNetInpaintPipeline, DDIMScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
 
-from multigen.pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
+from .pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
 from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
 from transformers import CLIPProcessor, CLIPTextModel
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
