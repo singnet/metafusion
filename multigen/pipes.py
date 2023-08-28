@@ -1,7 +1,4 @@
 import importlib
-
-import PIL
-import numpy
 import torch
 
 from PIL import Image, ImageFilter
@@ -198,8 +195,8 @@ class Im2ImPipe(BasePipe):
 class MaskedIm2ImPipe(Im2ImPipe):
     _class = MaskedStableDiffusionImg2ImgPipeline
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **kwargs):
+        super().__init__(*args, pipe=pipe, **kwargs)
         self._mask = None
         self._image_painted = None
         self._original_image = None
@@ -212,23 +209,23 @@ class MaskedIm2ImPipe(Im2ImPipe):
         # 1. mask is provided
         # 2. mask is computed from difference between original_image and image_painted
         if image_painted is not None:
-            neq = numpy.any(numpy.array(self._original_image) != numpy.array(self._image_painted), axis=-1)
-            mask = neq.astype(numpy.uint8) * 255
+            neq = np.any(np.array(self._original_image) != np.array(self._image_painted), axis=-1)
+            mask = neq.astype(np.uint8) * 255
         else:
             assert mask is not None
         self._mask = mask
         self._image_painted = image_painted
         input_image = image_painted if image_painted is not None else original_image
-        input_image = numpy.array(input_image)
+        input_image = np.array(input_image)
         super().setup(fimage=None, image=input_image / input_image.max(), **kwargs)
         pil_mask = mask
-        if not isinstance(self._mask, PIL.Image.Image):
-            pil_mask = PIL.Image.fromarray(mask)
+        if not isinstance(self._mask, Image.Image):
+            pil_mask = Image.fromarray(mask)
             if pil_mask.mode != "L":
                 pil_mask = pil_mask.convert("L")
         mask_blur = pil_mask.filter(ImageFilter.GaussianBlur(radius=blur))
-        mask_blur = numpy.array(mask_blur)
-        self._mask_blur = numpy.tile(mask_blur / mask_blur.max(), (3, 1, 1)).transpose(1,2,0)
+        mask_blur = np.array(mask_blur)
+        self._mask_blur = np.tile(mask_blur / mask_blur.max(), (3, 1, 1)).transpose(1,2,0)
 
     def gen(self, inputs):
         inputs = inputs.copy()
@@ -238,7 +235,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
         # compose with original using mask
         img_compose = self._mask_blur * img_gen + (1 - self._mask_blur) * self._original_image
         # convert to PIL image
-        img_compose = PIL.Image.fromarray(img_compose.astype(numpy.uint8))
+        img_compose = Image.fromarray(img_compose.astype(np.uint8))
         return img_compose
 
 

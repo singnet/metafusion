@@ -109,6 +109,8 @@ class MaskedStableDiffusionImg2ImgPipeline(StableDiffusionImg2ImgPipeline):
                 second element is a list of `bool`s indicating whether the corresponding generated image contains
                 "not-safe-for-work" (nsfw) content.
         """
+        # code adapted from parent class StableDiffusionImg2ImgPipeline
+
         # 0. Check inputs. Raise error if not correct
         self.check_inputs(prompt, strength, callback_steps, negative_prompt, prompt_embeds, negative_prompt_embeds)
 
