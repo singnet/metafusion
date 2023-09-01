@@ -81,14 +81,15 @@ class MyTestCase(unittest.TestCase):
 
     def test_loader(self):
         loader = Loader()
+        # load inpainting pipe
+        pipeline = loader.load_pipeline(MaskedIm2ImPipe._class, 'models-sd/icbinp')
+        inpaint = MaskedIm2ImPipe('models-sd/icbinp', pipe=pipeline)
 
         # create prompt2im pipe
         pipeline = loader.load_pipeline(Prompt2ImPipe._class, 'models-sd/icbinp')
         prompt2image = Prompt2ImPipe('models-sd/icbinp', pipe=pipeline)
+        prompt2image.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", clip_skip=2)
 
-        # load inpainting pipe
-        pipeline = loader.load_pipeline(MaskedIm2ImPipe._class, 'models-sd/icbinp')
-        inpaint = MaskedIm2ImPipe('models-sd/icbinp', pipe=pipeline)
         self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
                          prompt2image.pipe.unet.conv_out.weight.data_ptr(),
                          "unets are different")

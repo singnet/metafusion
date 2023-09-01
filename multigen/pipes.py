@@ -3,6 +3,7 @@ import torch
 
 from PIL import Image, ImageFilter
 import cv2
+import copy
 import numpy as np
 from typing import Optional, Type
 from diffusers import DPMSolverMultistepScheduler
@@ -45,6 +46,7 @@ def add_scheduler(pipe, scheduler):
 
 
 class BasePipe:
+    _class = None
 
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]],
@@ -118,7 +120,14 @@ class BasePipe:
             assert clip_skip <= 10
             if clip_skip:
                 prev_encoder = self.pipe.text_encoder
-                self.pipe.text_encoder = CLIPTextModel.from_pretrained(self.model_id, subfolder="text_encoder",
+                prev_config = prev_encoder.config
+                if prev_config['num_hidden_layers'] <= 12 - clip_skip:
+                    config = copy.copy(prev_config)
+                    config['num_hidden_layers'] = 12 - clip_skip
+                    self.pipe.text_encoder = CLIPTextModel(config)
+                    self.pipe.text_encoder.load_state_dict(prev_encoder.state_dict())
+                else:
+                    self.pipe.text_encoder = CLIPTextModel.from_pretrained(self.model_id, subfolder="text_encoder",
                                                                 num_hidden_layers=12 - clip_skip)
                 self.pipe.text_encoder.to(prev_encoder.device)
                 self.pipe.text_encoder.to(prev_encoder.dtype)
@@ -126,16 +135,18 @@ class BasePipe:
             # TODO? add scheduler to config?
             self.try_set_scheduler(dict(scheduler=args['scheduler']))
 
+
 class Prompt2ImPipe(BasePipe):
+    _class = StableDiffusionPipeline
 
     def __init__(self, model_id: str,
                  pipe: Optional[StableDiffusionPipeline] = None,
                  lpw=False, **args):
         if not lpw:
-            super().__init__(model_id=model_id, sd_pipe_class=StableDiffusionPipeline, pipe=pipe, **args)
+            super().__init__(model_id=model_id, sd_pipe_class=self._class, pipe=pipe, **args)
         else:
             #StableDiffusionKDiffusionPipeline
-            super().__init__(model_id=model_id, sd_pipe_class=StableDiffusionPipeline, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
+            super().__init__(model_id=model_id, sd_pipe_class=self._class, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
 
     def setup(self, width=768, height=768, guidance_scale=7.5, **args):
         super().setup(**args)
