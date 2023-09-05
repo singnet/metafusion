@@ -5,8 +5,9 @@ import PIL
 import torch
 import numpy
 
-from multigen import Prompt2ImPipe, Cfgen, GenSession
+from multigen import Prompt2ImPipe, Cfgen, GenSession, Loader
 from dummy import DummyDiffusionPipeline
+from pipes import MaskedIm2ImPipe
 
 
 class MyTestCase(unittest.TestCase):
@@ -77,6 +78,21 @@ class MyTestCase(unittest.TestCase):
         # compute difference as float
         diff = numpy.sum(numpy.abs(im1.astype(numpy.float32) - im2.astype(numpy.float32)))
         return diff
+
+    def test_loader(self):
+        loader = Loader()
+        # load inpainting pipe
+        pipeline = loader.load_pipeline(MaskedIm2ImPipe._class, 'models-sd/icbinp')
+        inpaint = MaskedIm2ImPipe('models-sd/icbinp', pipe=pipeline)
+
+        # create prompt2im pipe
+        pipeline = loader.load_pipeline(Prompt2ImPipe._class, 'models-sd/icbinp')
+        prompt2image = Prompt2ImPipe('models-sd/icbinp', pipe=pipeline)
+        prompt2image.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", clip_skip=2)
+
+        self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
+                         prompt2image.pipe.unet.conv_out.weight.data_ptr(),
+                         "unets are different")
 
 
 if __name__ == '__main__':
