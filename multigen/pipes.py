@@ -49,7 +49,7 @@ class BasePipe:
     _class = None
 
     def __init__(self, model_id: str,
-                 sd_pipe_class: Optional[Type[DiffusionPipeline]],
+                 sd_pipe_class: Optional[Type[DiffusionPipeline]]=self._class,
                  pipe: Optional[DiffusionPipeline] = None, **args):
         self.pipe = pipe
         self._scheduler = None
@@ -61,7 +61,11 @@ class BasePipe:
         if 'torch_dtype' not in args:
             args['torch_dtype']=torch.float16
         if self.pipe is None:
-            self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
+            assert sd_pipe_class is not None
+            if model_id.endswith('.safetensors'):
+                self.pipe = sd_pipe_class.from_single_file(model_id, **args)
+            else:
+                self.pipe = sd_pipe_class.from_pretrained(model_id, **args
         self.pipe.to("cuda")
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
@@ -143,10 +147,10 @@ class Prompt2ImPipe(BasePipe):
                  pipe: Optional[StableDiffusionPipeline] = None,
                  lpw=False, **args):
         if not lpw:
-            super().__init__(model_id=model_id, sd_pipe_class=self._class, pipe=pipe, **args)
+            super().__init__(model_id=model_id, pipe=pipe, **args)
         else:
             #StableDiffusionKDiffusionPipeline
-            super().__init__(model_id=model_id, sd_pipe_class=self._class, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
+            super().__init__(model_id=model_id, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
 
     def setup(self, width=768, height=768, guidance_scale=7.5, **args):
         super().setup(**args)
@@ -170,7 +174,7 @@ class Im2ImPipe(BasePipe):
     _class = StableDiffusionImg2ImgPipeline
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **args):
-        super().__init__(model_id=model_id, sd_pipe_class=self._class, pipe=pipe, **args)
+        super().__init__(model_id=model_id, pipe=pipe, **args)
         self._input_image = None
 
     def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None, **args):
@@ -251,6 +255,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
 
 
 class Cond2ImPipe(BasePipe):
+    _class = StableDiffusionControlNetPipeline
 
     # TODO: set path
     cpath = "./models-cn/"
@@ -387,13 +392,14 @@ class CIm2ImPipe(Cond2ImPipe):
 
 # TODO: does it make sense to inherint it from Cond2Im or CIm2Im ?
 class InpaintingPipe(BasePipe):
-
+    _class = StableDiffusionControlNetInpaintPipeline
+    
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  **args):
         dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
         cnet = ControlNetModel.from_pretrained(
             Cond2ImPipe.cpath+Cond2ImPipe.cmodels["inpaint"], torch_dtype=dtype)
-        super().__init__(sd_pipe_class=StableDiffusionControlNetInpaintPipeline, model_id=model_id, pipe=pipe, controlnet=cnet, **args)
+        super().__init__(model_id=model_id, pipe=pipe, controlnet=cnet, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
         self.pipe.scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config)
