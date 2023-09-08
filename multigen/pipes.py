@@ -49,8 +49,10 @@ class BasePipe:
     _class = None
 
     def __init__(self, model_id: str,
-                 sd_pipe_class: Optional[Type[DiffusionPipeline]]=self._class,
+                 sd_pipe_class: Optional[Type[DiffusionPipeline]]=None,
                  pipe: Optional[DiffusionPipeline] = None, **args):
+        if sd_pipe_class is None:
+            sd_pipe_class = self._class
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
@@ -65,7 +67,7 @@ class BasePipe:
             if model_id.endswith('.safetensors'):
                 self.pipe = sd_pipe_class.from_single_file(model_id, **args)
             else:
-                self.pipe = sd_pipe_class.from_pretrained(model_id, **args
+                self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
         self.pipe.to("cuda")
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
@@ -125,9 +127,9 @@ class BasePipe:
             if clip_skip:
                 prev_encoder = self.pipe.text_encoder
                 prev_config = prev_encoder.config
-                if prev_config['num_hidden_layers'] <= 12 - clip_skip:
+                if prev_config.num_hidden_layers <= 12 - clip_skip:
                     config = copy.copy(prev_config)
-                    config['num_hidden_layers'] = 12 - clip_skip
+                    config.num_hidden_layers = 12 - clip_skip
                     self.pipe.text_encoder = CLIPTextModel(config)
                     self.pipe.text_encoder.load_state_dict(prev_encoder.state_dict())
                 else:
