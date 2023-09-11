@@ -5,12 +5,23 @@ import PIL
 import torch
 import numpy
 
-from multigen import Prompt2ImPipe, Cfgen, GenSession, Loader
+from multigen import Prompt2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
 from dummy import DummyDiffusionPipeline
-from pipes import MaskedIm2ImPipe
 
 
-class MyTestCase(unittest.TestCase):
+class TestCase(unittest.TestCase):
+
+    def compute_diff(self, im1: PIL.Image.Image, im2: PIL.Image.Image) -> float:
+        # convert to numpy array
+        im1 = numpy.asarray(im1)
+        im2 = numpy.asarray(im2)
+        # compute difference as float
+        diff = numpy.sum(numpy.abs(im1.astype(numpy.float32) - im2.astype(numpy.float32)))
+        return diff
+
+
+
+class MyTestCase(TestCase):
 
     def setUp(self):
         self._pipeline = None
@@ -19,6 +30,7 @@ class MyTestCase(unittest.TestCase):
         if self.use_dummy:
             self._pipeline = DummyDiffusionPipeline()
             self._pipeline.add_image(PIL.Image.open("cube_planet_dms.png"))
+
 
     def test_basic_txt2im(self):
         model = "runwayml/stable-diffusion-v1-5"
@@ -71,16 +83,10 @@ class MyTestCase(unittest.TestCase):
         # count number of generated files
         self.assertEqual(len(os.listdir(dirname)), 20)
 
-    def compute_diff(self, im1: PIL.Image.Image, im2: PIL.Image.Image) -> float:
-        # convert to numpy array
-        im1 = numpy.asarray(im1)
-        im2 = numpy.asarray(im2)
-        # compute difference as float
-        diff = numpy.sum(numpy.abs(im1.astype(numpy.float32) - im2.astype(numpy.float32)))
-        return diff
-
     def test_loader(self):
         loader = Loader()
+        if self.use_dummy:
+            return
         # load inpainting pipe
         pipeline = loader.load_pipeline(MaskedIm2ImPipe._class, 'models-sd/icbinp')
         inpaint = MaskedIm2ImPipe('models-sd/icbinp', pipe=pipeline)
@@ -93,6 +99,46 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
                          prompt2image.pipe.unet.conv_out.weight.data_ptr(),
                          "unets are different")
+
+    
+class TestSDXL(TestCase):
+
+    def setUp(self):
+        self._pipeline = None
+        # read environment variables
+        self.use_dummy = os.environ.get("USE_DUMMY")
+        if self.use_dummy:
+            self._pipeline = DummyDiffusionPipeline()
+            self._pipeline.add_image(PIL.Image.open("cube_planet_dms_sdxl.png"))
+
+    def test_sdxl(self):
+        # https://civitai.com/models/101055/sd-xl
+        model = "models-sd/sdXL_v10VAEFix.safetensors" 
+        # create pipe
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline)
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler")
+        seed = 49045438434843
+        params = dict(prompt="a cube planet, cube-shaped, space photo, masterpiece",
+                      negative_prompt="spherical",
+                      generator=torch.cuda.manual_seed(seed))
+        image = pipe.gen(params)
+        image.save("cube_test_sdxl.png")
+        # load reference image
+        ref_image = PIL.Image.open("cube_planet_dms_sdxl.png")
+
+        # compute difference as float
+        diff = self.compute_diff(ref_image, image)
+        # check that difference is small
+        self.assertLess(diff, 0.0001)
+        # generate with different scheduler
+        params.update(scheduler="DDIMScheduler")
+        image = pipe.gen(params)
+        image.save("cube_test2_dimm.png")
+        diff = self.compute_diff(ref_image, image)
+        # check that difference is large
+        if not self.use_dummy:
+            self.assertGreater(diff, 1000)
+
 
 
 if __name__ == '__main__':
