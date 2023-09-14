@@ -160,7 +160,7 @@ class MaskedStableDiffusionImg2ImgPipeline(StableDiffusionImg2ImgPipeline):
         init_latents = [
             self.vae.encode(image.to(device=device, dtype=prompt_embeds.dtype)[i : i + 1]).latent_dist.mean for i in range(batch_size)
         ]
-        init_latents = torch.cat(init_latents, dim=0)
+        init_latents = torch.cat(init_latents, dim=0) * self.vae.config.scaling_factor
 
         # 6. create latent mask
         latent_mask = self._make_latent_mask(latents, mask)
@@ -191,8 +191,15 @@ class MaskedStableDiffusionImg2ImgPipeline(StableDiffusionImg2ImgPipeline):
                     noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
 
                 if latent_mask is not None:
-                    latents = torch.lerp(init_latents * self.vae.config.scaling_factor, latents, latent_mask)
-                    noise_pred = torch.lerp(torch.zeros_like(noise_pred), noise_pred, latent_mask)
+                    should_be_latens = self.prepare_latents(init_latents, timesteps[i].unsqueeze(0), batch_size,
+                                                        num_images_per_prompt,
+                                                        prompt_embeds.dtype, device, generator)
+                    should_be_noise = should_be_latens - init_latents
+
+                    latents = torch.lerp(should_be_latens, latents, latent_mask)
+                    noise_pred = torch.lerp(should_be_noise, noise_pred, latent_mask)
+                    #latents = torch.lerp(init_latents, latents, latent_mask)
+                    #noise_pred = torch.lerp(torch.zeros_like(noise_pred), noise_pred, latent_mask)
 
                  # compute the previous noisy sample x_t -> x_t-1
                 latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
@@ -207,7 +214,7 @@ class MaskedStableDiffusionImg2ImgPipeline(StableDiffusionImg2ImgPipeline):
             scaled = latents / self.vae.config.scaling_factor
             if latent_mask is not None:
                 # scaled = latents / self.vae.config.scaling_factor * latent_mask + init_latents * (1 - latent_mask)
-                scaled = torch.lerp(init_latents, scaled, latent_mask)
+                scaled = torch.lerp(init_latents / self.vae.config.scaling_factor, scaled, latent_mask)
             image = self.vae.decode(scaled, return_dict=False)[0]
             if self.debug_save:
                 image_gen = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
