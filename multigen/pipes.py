@@ -148,12 +148,13 @@ class BasePipe:
             if clip_skip:
                 prev_encoder = self.pipe.text_encoder
                 prev_config = prev_encoder.config
-                if prev_config.num_hidden_layers <= 12 - clip_skip:
+                # if we need less or equal number of hidden layers
+                if 12 - clip_skip <= prev_config.num_hidden_layers:
                     config = copy.copy(prev_config)
                     config.num_hidden_layers = 12 - clip_skip
                     self.pipe.text_encoder = CLIPTextModel(config)
                     self.pipe.text_encoder.load_state_dict(prev_encoder.state_dict())
-                else:
+                else:  # we need more hidden layers
                     self.pipe.text_encoder = CLIPTextModel.from_pretrained(self.model_id, subfolder="text_encoder",
                                                                            num_hidden_layers=12 - clip_skip)
                 self.pipe.text_encoder.to(prev_encoder.device)
