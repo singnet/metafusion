@@ -63,6 +63,9 @@ class BasePipe:
         if 'torch_dtype' not in args:
             args['torch_dtype']=torch.float16
 
+        if 'load_safety_checker' not in args:
+            args['load_safety_checker'] = False
+
         if self.pipe is None:
             constructor_args = dict()
             if isinstance(self, Cond2ImPipe):
@@ -74,7 +77,7 @@ class BasePipe:
                         self.pipe = StableDiffusionPipeline.from_single_file(model_id, **args)
                     except TypeError as e:
                         pass
-                    self.pipe = StableDiffusionXLPipeline.from_single_file(model_id, **args)
+                        self.pipe = StableDiffusionXLPipeline.from_single_file(model_id, **args)
                 else:
                     # we can't use specific class, because we dont know if it is sdxl
                     self.pipe = DiffusionPipeline.from_pretrained(model_id, **args)
@@ -154,7 +157,7 @@ class BasePipe:
                     config.num_hidden_layers = 12 - clip_skip
                     self.pipe.text_encoder = CLIPTextModel(config)
                     self.pipe.text_encoder.load_state_dict(prev_encoder.state_dict())
-                else:  # we need more hidden layers
+                else: # we need more hidden layers
                     self.pipe.text_encoder = CLIPTextModel.from_pretrained(self.model_id, subfolder="text_encoder",
                                                                            num_hidden_layers=12 - clip_skip)
                 self.pipe.text_encoder.to(prev_encoder.device)
