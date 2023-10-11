@@ -63,9 +63,6 @@ class BasePipe:
         if 'torch_dtype' not in args:
             args['torch_dtype']=torch.float16
 
-        if 'load_safety_checker' not in args:
-            args['load_safety_checker'] = False
-
         if self.pipe is None:
             constructor_args = dict()
             if isinstance(self, Cond2ImPipe):
@@ -292,8 +289,8 @@ class MaskedIm2ImPipe(Im2ImPipe):
 
 
 class ControlnetType(Enum):
-    stable_diffusion = 1
-    stable_diffusion_xl = 2
+    SD = 1
+    SDXL = 2
 
 
 class Cond2ImPipe(BasePipe):
@@ -334,7 +331,7 @@ class Cond2ImPipe(BasePipe):
     }
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=ControlnetType.stable_diffusion, **args):
+                 ctypes=["soft"], model_type=ControlnetType.SD, **args):
         self.model_type = model_type
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
@@ -351,27 +348,27 @@ class Cond2ImPipe(BasePipe):
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
 
     def get_cmodels(self):
-        if self.model_type == ControlnetType.stable_diffusion_xl:
+        if self.model_type == ControlnetType.SDXL:
             cmodels = self.cmodelsxl
-        elif self.model_type == ControlnetType.stable_diffusion:
+        elif self.model_type == ControlnetType.SD:
             cmodels = self.cmodels
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cmodels
 
     def get_cpath(self):
-        if self.model_type == ControlnetType.stable_diffusion_xl:
+        if self.model_type == ControlnetType.SDXL:
             cpath = self.cpathxl
-        elif self.model_type == ControlnetType.stable_diffusion:
+        elif self.model_type == ControlnetType.SD:
             cpath = self.cpath
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cpath
 
     def get_sd_class(self):
-        if self.model_type == ControlnetType.stable_diffusion_xl:
+        if self.model_type == ControlnetType.SDXL:
             cclass = self._classxl
-        elif self.model_type == ControlnetType.stable_diffusion:
+        elif self.model_type == ControlnetType.SD:
             cclass = self._class
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
@@ -394,9 +391,9 @@ class Cond2ImPipe(BasePipe):
         })
 
     def get_default_cond_scales(self):
-        if self.model_type == ControlnetType.stable_diffusion_xl:
+        if self.model_type == ControlnetType.SDXL:
             cond_scales = self.cond_scales_defaults_xl
-        elif self.model_type == ControlnetType.stable_diffusion:
+        elif self.model_type == ControlnetType.SD:
             cond_scales = self.cond_scales_defaults
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
@@ -422,7 +419,7 @@ class Cond2ImPipe(BasePipe):
 class CIm2ImPipe(Cond2ImPipe):
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=ControlnetType.stable_diffusion, **args):
+                 ctypes=["soft"], model_type=ControlnetType.SD, **args):
         super().__init__(model_id=model_id, pipe=pipe, ctypes=ctypes, model_type=model_type, **args)
         # The difference from Cond2ImPipe is that the conditional image is not
         # taken as input but is obtained from an ordinary image, so this image
