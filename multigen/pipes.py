@@ -73,7 +73,6 @@ class BasePipe:
                     try:
                         self.pipe = StableDiffusionPipeline.from_single_file(model_id, **args)
                     except TypeError as e:
-                        pass
                         self.pipe = StableDiffusionXLPipeline.from_single_file(model_id, **args)
                 else:
                     # we can't use specific class, because we dont know if it is sdxl
@@ -153,8 +152,8 @@ class BasePipe:
                     config = copy.copy(prev_config)
                     config.num_hidden_layers = 12 - clip_skip
                     self.pipe.text_encoder = CLIPTextModel(config)
-                    self.pipe.text_encoder.load_state_dict(prev_encoder.state_dict())
-                else: # we need more hidden layers
+                    self.pipe.text_encoder.load_state_dict(prev_encoder.state_dict(), strict=False)
+                else:  # we need more hidden layers
                     self.pipe.text_encoder = CLIPTextModel.from_pretrained(self.model_id, subfolder="text_encoder",
                                                                            num_hidden_layers=12 - clip_skip)
                 self.pipe.text_encoder.to(prev_encoder.device)
