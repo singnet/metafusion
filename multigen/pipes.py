@@ -73,8 +73,7 @@ class BasePipe:
                     try:
                         self.pipe = StableDiffusionPipeline.from_single_file(model_id, **args)
                     except TypeError as e:
-                        pass
-                    self.pipe = StableDiffusionXLPipeline.from_single_file(model_id, **args)
+                        self.pipe = StableDiffusionXLPipeline.from_single_file(model_id, **args)
                 else:
                     # we can't use specific class, because we dont know if it is sdxl
                     self.pipe = DiffusionPipeline.from_pretrained(model_id, **args)
@@ -148,12 +147,13 @@ class BasePipe:
             if clip_skip:
                 prev_encoder = self.pipe.text_encoder
                 prev_config = prev_encoder.config
-                if prev_config.num_hidden_layers <= 12 - clip_skip:
+                # if we need less or equal number of hidden layers
+                if 12 - clip_skip <= prev_config.num_hidden_layers:
                     config = copy.copy(prev_config)
                     config.num_hidden_layers = 12 - clip_skip
                     self.pipe.text_encoder = CLIPTextModel(config)
-                    self.pipe.text_encoder.load_state_dict(prev_encoder.state_dict())
-                else:
+                    self.pipe.text_encoder.load_state_dict(prev_encoder.state_dict(), strict=False)
+                else:  # we need more hidden layers
                     self.pipe.text_encoder = CLIPTextModel.from_pretrained(self.model_id, subfolder="text_encoder",
                                                                            num_hidden_layers=12 - clip_skip)
                 self.pipe.text_encoder.to(prev_encoder.device)
@@ -288,8 +288,8 @@ class MaskedIm2ImPipe(Im2ImPipe):
 
 
 class ControlnetType(Enum):
-    stable_diffusion = 1
-    stable_diffusion_xl = 2
+    SD = 1
+    SDXL = 2
 
 
 class Cond2ImPipe(BasePipe):
@@ -330,7 +330,7 @@ class Cond2ImPipe(BasePipe):
     }
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=ControlnetType.stable_diffusion, **args):
+                 ctypes=["soft"], model_type=ControlnetType.SD, **args):
         self.model_type = model_type
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
@@ -347,27 +347,27 @@ class Cond2ImPipe(BasePipe):
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
 
     def get_cmodels(self):
-        if self.model_type == ControlnetType.stable_diffusion_xl:
+        if self.model_type == ControlnetType.SDXL:
             cmodels = self.cmodelsxl
-        elif self.model_type == ControlnetType.stable_diffusion:
+        elif self.model_type == ControlnetType.SD:
             cmodels = self.cmodels
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cmodels
 
     def get_cpath(self):
-        if self.model_type == ControlnetType.stable_diffusion_xl:
+        if self.model_type == ControlnetType.SDXL:
             cpath = self.cpathxl
-        elif self.model_type == ControlnetType.stable_diffusion:
+        elif self.model_type == ControlnetType.SD:
             cpath = self.cpath
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cpath
 
     def get_sd_class(self):
-        if self.model_type == ControlnetType.stable_diffusion_xl:
+        if self.model_type == ControlnetType.SDXL:
             cclass = self._classxl
-        elif self.model_type == ControlnetType.stable_diffusion:
+        elif self.model_type == ControlnetType.SD:
             cclass = self._class
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
@@ -390,9 +390,9 @@ class Cond2ImPipe(BasePipe):
         })
 
     def get_default_cond_scales(self):
-        if self.model_type == ControlnetType.stable_diffusion_xl:
+        if self.model_type == ControlnetType.SDXL:
             cond_scales = self.cond_scales_defaults_xl
-        elif self.model_type == ControlnetType.stable_diffusion:
+        elif self.model_type == ControlnetType.SD:
             cond_scales = self.cond_scales_defaults
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
@@ -418,7 +418,7 @@ class Cond2ImPipe(BasePipe):
 class CIm2ImPipe(Cond2ImPipe):
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=ControlnetType.stable_diffusion, **args):
+                 ctypes=["soft"], model_type=ControlnetType.SD, **args):
         super().__init__(model_id=model_id, pipe=pipe, ctypes=ctypes, model_type=model_type, **args)
         # The difference from Cond2ImPipe is that the conditional image is not
         # taken as input but is obtained from an ordinary image, so this image

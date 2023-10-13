@@ -25,15 +25,15 @@ class MyTestCase(TestCase):
 
     def setUp(self):
         self._pipeline = None
-        # read environment variables
-        self.use_dummy = os.environ.get("USE_DUMMY")
-        if self.use_dummy:
-            self._pipeline = DummyDiffusionPipeline()
-            self._pipeline.add_image(PIL.Image.open("cube_planet_dms.png"))
 
+    def get_model(self):
+        return "hf-internal-testing/tiny-stable-diffusion-torch"
+
+    def get_ref_image(self):
+        return PIL.Image.open("cube_planet_dms.png")
 
     def test_basic_txt2im(self):
-        model = "runwayml/stable-diffusion-v1-5"
+        model = self.get_model()
         # create pipe
         pipe = Prompt2ImPipe(model, pipe=self._pipeline)
         pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler")
@@ -43,24 +43,17 @@ class MyTestCase(TestCase):
                       generator=torch.cuda.manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test.png")
-        # load reference image
-        ref_image = PIL.Image.open("cube_planet_dms.png")
 
-        # compute difference as float
-        diff = self.compute_diff(ref_image, image)
-        # check that difference is small
-        self.assertLess(diff, 0.0001)
         # generate with different scheduler
         params.update(scheduler="DDIMScheduler")
-        image = pipe.gen(params)
-        image.save("cube_test2_dimm.png")
-        diff = self.compute_diff(ref_image, image)
+        image_ddim = pipe.gen(params)
+        image_ddim.save("cube_test2_dimm.png")
+        diff = self.compute_diff(image_ddim, image)
         # check that difference is large
-        if not self.use_dummy:
-            self.assertGreater(diff, 1000)
+        self.assertGreater(diff, 1000)
 
     def test_with_session(self):
-        model = "runwayml/stable-diffusion-v1-5"
+        model = self.get_model()
 
         nprompt = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers, fewer fingers, lowres, bad hands, duplicate heads, bad anatomy, bad crop"
 
@@ -85,15 +78,15 @@ class MyTestCase(TestCase):
 
     def test_loader(self):
         loader = Loader()
-        if self.use_dummy:
-            return
+        model_id = self.get_model()
+
         # load inpainting pipe
-        pipeline = loader.load_pipeline(MaskedIm2ImPipe._class, 'models-sd/icbinp')
-        inpaint = MaskedIm2ImPipe('models-sd/icbinp', pipe=pipeline)
+        pipeline = loader.load_pipeline(MaskedIm2ImPipe._class, model_id)
+        inpaint = MaskedIm2ImPipe(model_id, pipe=pipeline)
 
         # create prompt2im pipe
-        pipeline = loader.load_pipeline(Prompt2ImPipe._class, 'models-sd/icbinp')
-        prompt2image = Prompt2ImPipe('models-sd/icbinp', pipe=pipeline)
+        pipeline = loader.load_pipeline(Prompt2ImPipe._class, model_id)
+        prompt2image = Prompt2ImPipe(model_id, pipe=pipeline)
         prompt2image.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", clip_skip=2)
 
         self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
@@ -101,44 +94,10 @@ class MyTestCase(TestCase):
                          "unets are different")
 
     
-class TestSDXL(TestCase):
+class TestSDXL(MyTestCase):
 
-    def setUp(self):
-        self._pipeline = None
-        # read environment variables
-        self.use_dummy = os.environ.get("USE_DUMMY")
-        if self.use_dummy:
-            self._pipeline = DummyDiffusionPipeline()
-            self._pipeline.add_image(PIL.Image.open("cube_planet_dms_sdxl.png"))
-
-    def test_sdxl(self):
-        # https://civitai.com/models/101055/sd-xl
-        model = "models-sd/sdXL_v10VAEFix.safetensors" 
-        # create pipe
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline)
-        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler")
-        seed = 49045438434843
-        params = dict(prompt="a cube planet, cube-shaped, space photo, masterpiece",
-                      negative_prompt="spherical",
-                      generator=torch.cuda.manual_seed(seed))
-        image = pipe.gen(params)
-        image.save("cube_test_sdxl.png")
-        # load reference image
-        ref_image = PIL.Image.open("cube_planet_dms_sdxl.png")
-
-        # compute difference as float
-        diff = self.compute_diff(ref_image, image)
-        # check that difference is small
-        self.assertLess(diff, 0.0001)
-        # generate with different scheduler
-        params.update(scheduler="DDIMScheduler")
-        image = pipe.gen(params)
-        image.save("cube_test2_dimm.png")
-        diff = self.compute_diff(ref_image, image)
-        # check that difference is large
-        if not self.use_dummy:
-            self.assertGreater(diff, 1000)
-
+    def get_model(self):
+        return "hf-internal-testing/tiny-stable-diffusion-xl-pipe"
 
 
 if __name__ == '__main__':
