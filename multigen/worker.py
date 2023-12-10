@@ -136,7 +136,7 @@ class ServiceThread(threading.Thread):
                     sess = self.sessions[data["session_id"]]
                 self.logger.info("GENERATING: " + str(data))
                 # TODO: it might be possible to avoid model loading each time
-                pipe = Prompt2ImPipe(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]],
+                pipe = Prompt2ImPipe(str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]]),
                                      lpw=sess["lpw"])
                 pipe.setup()#TODO: width=768, height=768)
                 # TODO: add negative prompt to parameters
