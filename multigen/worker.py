@@ -4,7 +4,7 @@ import threading
 from collections import deque
 import random
 import yaml
-import os
+from pathlib import Path
 import logging
 
 from .prompting import Cfgen
@@ -14,18 +14,16 @@ from .pipes import Prompt2ImPipe
 class ServiceThread(threading.Thread):
     def __init__(self, cfg_file):
         super().__init__(name='imgen', daemon=False)
-        path_prefix = ""
-        if not os.path.isfile(cfg_file):
-            path_prefix = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(path_prefix, cfg_file), "r") as f:
+        cfg_file = Path(cfg_file)
+        self.cwd = cfg_file.parent
+        with open(cfg_file, "r") as f:
             self.config = yaml.safe_load(f)
-        with open(os.path.join(path_prefix, self.config["model_list"]), "r") as f:
+        with open(self.cwd/self.config["model_list"], "r") as f:
             self.models = yaml.safe_load(f)
         if 'logging_folder' in self.config:
-            logname = self.config['logging_folder'] + datetime.today().strftime('%Y-%m-%d') + ".log"
+            logname = self.cwd / (self.config['logging_folder'] + datetime.today().strftime('%Y-%m-%d') + ".log")
             logging.basicConfig(filename=logname)
         self.logger = logging.getLogger(__name__)
-        # TODO ? relative path for model_dir in config
         self.sessions = {}
         self.queue = deque()
         self.qlimit = 5
@@ -117,7 +115,7 @@ class ServiceThread(threading.Thread):
                 r.update({ "warning": "Incorrect image index" })
                 return r
             # TODO: root dir
-            path = os.path.join("_projects", sess["user"], sess["project"])
+            path = self.cwd/"_projects"/sess["user"]/sess["project"]
             if img_idx is None:
                 return path
             # TODO: image file names are saved with path now... getting path and name seem to be independent
@@ -138,7 +136,7 @@ class ServiceThread(threading.Thread):
                     sess = self.sessions[data["session_id"]]
                 self.logger.info("GENERATING: " + str(data))
                 # TODO: it might be possible to avoid model loading each time
-                pipe = Prompt2ImPipe(os.path.join(self.config["model_dir"], self.models['base'][sess["model"]]),
+                pipe = Prompt2ImPipe(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]],
                                      lpw=sess["lpw"])
                 pipe.setup()#TODO: width=768, height=768)
                 # TODO: add negative prompt to parameters
