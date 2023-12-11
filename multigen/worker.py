@@ -9,6 +9,8 @@ class ServiceThread(ServiceThreadBase):
     def run(self):
         def _update(sess, job, gs):
             sess["images"].append(gs.last_img_name)
+            if 'image_callback' in data:
+                data['image_callback'](gs.last_img_name)
             job["count"] -= 1
         while not self._stop:
             while self.queue:
@@ -17,6 +19,8 @@ class ServiceThread(ServiceThreadBase):
                     data = self.queue[-1]
                     sess = self.sessions[data["session_id"]]
                 self.logger.info("GENERATING: " + str(data))
+                if 'start_callback' in data:
+                    data['start_callback']()
                 # TODO: it might be possible to avoid model loading each time
                 pipe = Prompt2ImPipe(str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]]),
                                      lpw=sess["lpw"])
@@ -27,6 +31,8 @@ class ServiceThread(ServiceThreadBase):
                                 pipe, Cfgen(data["prompt"], nprompt))
                 gs.gen_sess(add_count = data["count"],
                             callback = lambda: _update(sess, data, gs))
+                if 'finish_callback' in data:
+                    data['finish_callback']()
                 with self._lock:
                     self.queue.pop()
             time.sleep(0.2)
