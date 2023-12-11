@@ -67,7 +67,7 @@ class ServiceThreadBase(threading.Thread):
             if a["count"] > self.max_img_cnt:
                 a["count"] = self.max_img_cnt
                 r["warning"] = f"maximum image count exceeded {self.max_img_cnt}"
-            self.queue.append(a)
+            self.queue.appendleft(a)
             r["queue_number"] = len(self.queue)-1
             return r
 
