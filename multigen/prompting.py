@@ -32,7 +32,7 @@ def get_prompt(prompt_desc):
 
 class Cfgen:
 
-    def __init__(self, prompt, negative_prompt="", max_count=0, seeds=None, max_seed_rounds=1):
+    def __init__(self, prompt, negative_prompt="", max_count=0, seeds=None, max_seed_rounds=1, **kwargs):
         self.prompt = prompt
         self.negative_prompt = negative_prompt
         self.seeds = seeds
@@ -41,6 +41,7 @@ class Cfgen:
         self.max_count = max_count
         self.count = 0
         self.start_count = 0
+        self.inputs = kwargs
 
     def __iter__(self):
         return self
@@ -54,7 +55,11 @@ class Cfgen:
         seed = self.seeds[self.count % nseeds] if nseeds > 0 else \
                random.randint(1, 1024*1024*1024*4-1)
         self.count += 1
-        return {'prompt': get_prompt(self.prompt),
+
+        result = {'prompt': get_prompt(self.prompt),
                 'generator': seed,
                 'negative_prompt': get_prompt(self.negative_prompt)}
+        result.update(self.inputs)
+        return result
+
 
