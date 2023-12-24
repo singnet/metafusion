@@ -251,8 +251,8 @@ class MaskedIm2ImPipe(Im2ImPipe):
         self._mask_blur = None
 
     def setup(self, original_image=None, image_painted=None, mask=None, blur=4, **kwargs):
-        self._original_image = original_image
-        self._image_painted = image_painted
+        self._original_image = Image.open(original_image) if isinstance(original_image, str) else original_image
+        self._image_painted = Image.open(image_painted) if isinstance(image_painted, str) else image_painted
         # there are two options:
         # 1. mask is provided
         # 2. mask is computed from difference between original_image and image_painted
@@ -262,8 +262,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
         else:
             assert mask is not None
         self._mask = mask
-        self._image_painted = image_painted
-        input_image = image_painted if image_painted is not None else original_image
+        input_image = self._image_painted if self._image_painted is not None else self._original_image
         input_image = np.array(input_image)
         super().setup(fimage=None, image=input_image / input_image.max(), **kwargs)
         pil_mask = mask
