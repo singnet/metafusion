@@ -1,10 +1,14 @@
 from datetime import datetime
+from typing import Type
 import threading
 from collections import deque
 import random
 import yaml
 from pathlib import Path
 import logging
+from .pipes import Prompt2ImPipe, MaskedIm2ImPipe
+from .loader import Loader
+
 
 class ServiceThreadBase(threading.Thread):
     def __init__(self, cfg_file):
@@ -25,6 +29,16 @@ class ServiceThreadBase(threading.Thread):
         self.max_img_cnt = 20
         self._lock = threading.Lock()
         self._stop = False
+        self._loader = Loader()
+        self._pipe_name_to_pipe = dict()
+        for p in self.models['pipes']:
+            class_name = self.models['pipes'][p]['classname']
+            self._pipe_name_to_pipe[p] = globals()[class_name]
+        print(self._pipe_name_to_pipe)
+
+    @property
+    def pipes(self):
+        return self.models['pipes']
 
     def open_session(self, **args):
         user = args["user"]
@@ -121,3 +135,7 @@ class ServiceThreadBase(threading.Thread):
 
     def run(self):
         raise NotImplementedError('Define run in %s' % (self.__class__.__name__))
+
+    def get_pipe_class(self, name: str) -> Type['BasePipe']:
+        return self._pipe_name_to_pipe[name]
+
