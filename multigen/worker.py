@@ -35,6 +35,7 @@ class ServiceThread(ServiceThreadBase):
                 model_id = str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]])
                 pipe = self.get_pipeline(pipe_name, model_id)
 
+                # TODO: the list of provided images can depend on the pipeline (e.g., it will be different for Cond)
                 images = data['images']
                 if images:
                     pipe.setup(**data, original_image=str(images[0]),
