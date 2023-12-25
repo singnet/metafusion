@@ -13,7 +13,10 @@ class Loader:
         for key, pipe in self._pipes.items():
             if key == path:
                 return cls(**pipe.components)
-        result = cls.from_pretrained(path)
+        if path.endswith('safetensors'):
+            result = cls.from_single_file(path)
+        else:
+            result = cls.from_pretrained(path)
         self.register_pipeline(result, path)
         return result
 

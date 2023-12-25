@@ -5,7 +5,16 @@ from .prompting import Cfgen
 from .sessions import GenSession
 from .pipes import Prompt2ImPipe
 
+
 class ServiceThread(ServiceThreadBase):
+    def get_pipeline(self, pipe_name, model_id):
+        pipe_class = self.get_pipe_class(pipe_name)
+        pipeline = self._loader.load_pipeline(pipe_class._class, model_id)
+
+        pipe = pipe_class(model_id, pipe=pipeline)
+        return pipe
+
+
     def run(self):
         def _update(sess, job, gs):
             sess["images"].append(gs.last_img_name)
@@ -21,10 +30,18 @@ class ServiceThread(ServiceThreadBase):
                 self.logger.info("GENERATING: " + str(data))
                 if 'start_callback' in data:
                     data['start_callback']()
-                # TODO: it might be possible to avoid model loading each time
-                pipe = Prompt2ImPipe(str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]]),
-                                     lpw=sess["lpw"])
-                pipe.setup()#TODO: width=768, height=768)
+
+                pipe_name = sess.get('pipe', 'Prompt2ImPipe')
+                model_id = str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]])
+                pipe = self.get_pipeline(pipe_name, model_id)
+
+                # TODO: the list of provided images can depend on the pipeline (e.g., it will be different for Cond)
+                images = data['images']
+                if images:
+                    pipe.setup(**data, original_image=str(images[0]),
+                            image_painted=str(images[1]))
+                else:
+                    pipe.setup(**data)
                 # TODO: add negative prompt to parameters
                 nprompt = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers, fewer fingers, lowres, nude, bad hands, duplicate heads, bad anatomy, bad crop"
                 gs = GenSession(self.get_image_pathname(data["session_id"], None),
