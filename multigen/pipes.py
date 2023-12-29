@@ -325,7 +325,8 @@ class Cond2ImPipe(BasePipe):
         "soft-sobel": 0.3,
         "soft": 0.95, #0.5
         "depth": 0.5,
-        "inpaint": 1.0
+        "inpaint": 1.0,
+        "qr": 1.5
     }
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
@@ -339,7 +340,9 @@ class Cond2ImPipe(BasePipe):
         cpath = self.get_cpath()
         cmodels = self.get_cmodels()
         sd_class = self.get_sd_class()
-        cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype) for c in ctypes]
+        cnets = None
+        if pipe is None:
+            cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype) for c in ctypes]
         super().__init__(model_id=model_id, pipe=pipe, sd_pipe_class=sd_class, controlnet=cnets, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?

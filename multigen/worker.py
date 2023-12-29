@@ -7,13 +7,17 @@ from .pipes import Prompt2ImPipe
 
 
 class ServiceThread(ServiceThreadBase):
-    def get_pipeline(self, pipe_name, model_id):
+    def get_pipeline(self, pipe_name, model_id, cnet=None):
         pipe_class = self.get_pipe_class(pipe_name)
-        pipeline = self._loader.load_pipeline(pipe_class._class, model_id)
-
-        pipe = pipe_class(model_id, pipe=pipeline)
+        if cnet is None:
+            pipeline = self._loader.load_pipeline(pipe_class._class, model_id)
+            pipe = pipe_class(model_id, pipe=pipeline)
+        else:
+            pipeline = self._loader.get_pipeline(model_id)
+            if pipeline is None or 'controlnet' not in pipeline.pipe.components :
+                pipe = pipe_class(model_id, ctypes=[cnet])
+                self._loader.register_pipeline(pipe.pipe, model_id)
         return pipe
-
 
     def run(self):
         def _update(sess, job, gs):
@@ -32,14 +36,16 @@ class ServiceThread(ServiceThreadBase):
                     data['start_callback']()
 
                 pipe_name = sess.get('pipe', 'Prompt2ImPipe')
-                model_id = str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]])
-                pipe = self.get_pipeline(pipe_name, model_id)
+                model_id = str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]]['id'])
+                pipe = self.get_pipeline(pipe_name, model_id, cnet=data.get('cnet', None))
 
                 # TODO: the list of provided images can depend on the pipeline (e.g., it will be different for Cond)
                 images = data['images']
-                if images:
+                if len(images) == 2:
                     pipe.setup(**data, original_image=str(images[0]),
                             image_painted=str(images[1]))
+                elif len(images) == 1:
+                    pipe.setup(**data, fimage=str(images[0]))
                 else:
                     pipe.setup(**data)
                 # TODO: add negative prompt to parameters
