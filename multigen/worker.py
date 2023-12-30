@@ -14,9 +14,11 @@ class ServiceThread(ServiceThreadBase):
             pipe = pipe_class(model_id, pipe=pipeline)
         else:
             pipeline = self._loader.get_pipeline(model_id)
-            if pipeline is None or 'controlnet' not in pipeline.pipe.components :
+            if pipeline is None or 'controlnet' not in pipeline.components:
                 pipe = pipe_class(model_id, ctypes=[cnet])
                 self._loader.register_pipeline(pipe.pipe, model_id)
+            else:
+                pipe = pipe_class(model_id, pipe=pipeline)
         return pipe
 
     def run(self):
