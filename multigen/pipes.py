@@ -305,6 +305,7 @@ class Cond2ImPipe(BasePipe):
         "ip2p": "control_v11e_sd15_ip2p",
         "soft-sobel": "control_v11p_sd15_softedge",
         "soft": "control_v11p_sd15_softedge",
+        "scribble": "control_v11p_sd15_scribble",
         "depth": "control_v11f1p_sd15_depth",
         "inpaint": "control_v11p_sd15_inpaint",
         "qr": "controlnet_qrcode-control_v1p_sd15"
@@ -324,6 +325,7 @@ class Cond2ImPipe(BasePipe):
         "ip2p": 0.5,
         "soft-sobel": 0.3,
         "soft": 0.95, #0.5
+        "scribble": 0.95,
         "depth": 0.5,
         "inpaint": 1.0,
         "qr": 1.5
