@@ -40,13 +40,14 @@ class ServiceThread(ServiceThreadBase):
                 pipe_name = sess.get('pipe', 'Prompt2ImPipe')
                 model_id = str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]]['id'])
                 pipe = self.get_pipeline(pipe_name, model_id, cnet=data.get('cnet', None))
+                class_name = str(pipe.__class__)
+                self.logger.debug(f'got pipeline {class_name}')
 
-                # TODO: the list of provided images can depend on the pipeline (e.g., it will be different for Cond)
                 images = data['images']
-                if len(images) == 2:
+                if 'MaskedIm2ImPipe' in class_name:
                     pipe.setup(**data, original_image=str(images[0]),
                             image_painted=str(images[1]))
-                elif len(images) == 1:
+                elif 'Cond2ImPipe' in class_name:
                     pipe.setup(**data, fimage=str(images[0]))
                 else:
                     pipe.setup(**data)
