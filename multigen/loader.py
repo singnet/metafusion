@@ -1,6 +1,6 @@
 from typing import Type
 import logging
-from diffusers import DiffusionPipeline
+from diffusers import DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
 
 
 logger = logging.getLogger(__file__)
@@ -15,7 +15,16 @@ class Loader:
     def load_pipeline(self, cls: Type[DiffusionPipeline], path, **additional_args):
         for key, pipe in self._pipes.items():
             if key == path:
-                return cls(**pipe.components, **additional_args)
+                components = pipe.components
+                if issubclass(cls, StableDiffusionXLControlNetPipeline) or issubclass(cls, StableDiffusionControlNetPipeline):
+                    # todo: keep controlnets in cache explicitly
+                    if 'controlnet' in additional_args:
+                        components.pop('controlnet')
+                    return cls(**components, **additional_args)
+                components.pop('controlnet')
+                return cls(**components, **additional_args)
+
+
         if path.endswith('safetensors'):
             result = cls.from_single_file(path, **additional_args)
         else:
