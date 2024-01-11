@@ -21,7 +21,10 @@ class Loader:
                     if 'controlnet' in additional_args:
                         components.pop('controlnet')
                     return cls(**components, **additional_args)
-                components.pop('controlnet')
+                try:
+                    components.pop('controlnet')
+                except Exception as e:
+                    pass
                 return cls(**components, **additional_args)
 
 
