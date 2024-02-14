@@ -21,10 +21,10 @@ class Loader:
                     if 'controlnet' in additional_args:
                         components.pop('controlnet')
                     return cls(**components, **additional_args)
-                try:
+                # handling the case when the model in cache has controlnet in it
+                # but we don't need it
+                if 'controlnet' in components:
                     components.pop('controlnet')
-                except Exception as e:
-                    pass
                 return cls(**components, **additional_args)
 
 
