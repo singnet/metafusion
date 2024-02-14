@@ -1,4 +1,5 @@
 import time
+import torch
 
 from .worker_base import ServiceThreadBase
 from .prompting import Cfgen
@@ -7,10 +8,17 @@ from .pipes import Prompt2ImPipe
 
 
 class ServiceThread(ServiceThreadBase):
-    def get_pipeline(self, pipe_name, model_id, cnet=None):
+    def get_pipeline(self, pipe_name, model_id, cnet=None, xl=False):
         pipe_class = self.get_pipe_class(pipe_name)
+        return self._get_pipeline(pipe_class, model_id, cnet=cnet, xl=xl)
+
+    def _get_pipeline(self, pipe_class, model_id, cnet=None, xl=False):
         if cnet is None:
-            pipeline = self._loader.load_pipeline(pipe_class._class, model_id)
+            if xl:
+                cls = pipe_class._classxl
+            else:
+                cls = pipe_class._class
+            pipeline = self._loader.load_pipeline(cls, model_id, torch_dtype=torch.float16)
             pipe = pipe_class(model_id, pipe=pipeline)
         else:
             pipeline = self._loader.get_pipeline(model_id)
@@ -39,7 +47,8 @@ class ServiceThread(ServiceThreadBase):
 
                 pipe_name = sess.get('pipe', 'Prompt2ImPipe')
                 model_id = str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]]['id'])
-                pipe = self.get_pipeline(pipe_name, model_id, cnet=data.get('cnet', None))
+                is_xl = self.models['base'][sess["model"]]['xl']
+                pipe = self.get_pipeline(pipe_name, model_id, cnet=data.get('cnet', None), xl=is_xl)
                 class_name = str(pipe.__class__)
                 self.logger.debug(f'got pipeline {class_name}')
 
