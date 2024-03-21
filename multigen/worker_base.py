@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import Type
 import threading
@@ -21,6 +22,8 @@ class ServiceThreadBase(threading.Thread):
             self.models = yaml.safe_load(f)
         if 'logging_folder' in self.config:
             logname = self.cwd / (self.config['logging_folder'] + datetime.today().strftime('%Y-%m-%d') + ".log")
+            if not os.path.exists(self.config['logging_folder']):
+                os.mkdir(self.config['logging_folder'])
             logging.basicConfig(filename=logname)
         self.logger = logging.getLogger(__name__)
         self.sessions = {}

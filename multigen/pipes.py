@@ -15,7 +15,6 @@ from diffusers import StableDiffusionControlNetInpaintPipeline, StableDiffusionX
 from diffusers.schedulers import KarrasDiffusionSchedulers
 
 from .pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
-from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
 from transformers import CLIPProcessor, CLIPTextModel
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 # from diffusers import StableDiffusionKDiffusionPipeline
@@ -119,6 +118,7 @@ class BasePipe:
             inputs.pop('scheduler')
 
     def add_hypernet(self, path, multiplier=None):
+        from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
         hypernetwork = Hypernetwork()
         hypernetwork.load(path)
         self._hypernets.append(path)

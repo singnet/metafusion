@@ -303,7 +303,7 @@ class HyperAttnProcessor(nn.Module):
     def __init__(self, hypernets=[]):
         super().__init__()
         self.hypernetworks = hypernets
-   
+
     def __call__(
         self,
         attn: Attention,
@@ -383,7 +383,7 @@ class HyperAttnProcessor(nn.Module):
         return hidden_states
 
 
-def add_hypernet(unet: diffusers.models.unet_2d_condition.UNet2DConditionModel, hypernet: Hypernetwork) -> None:
+def add_hypernet(unet: diffusers.models.unets.unet_2d_condition, hypernet: Hypernetwork) -> None:
     """
     Add a hypernetwork to an unet.
     """
@@ -398,7 +398,7 @@ def add_hypernet(unet: diffusers.models.unet_2d_condition.UNet2DConditionModel, 
     unet.set_attn_processor(attn_processors)
 
 
-def clear_hypernets(unet: diffusers.models.unet_2d_condition.UNet2DConditionModel) -> None:
+def clear_hypernets(unet: diffusers.models.unets.unet_2d_condition) -> None:
     """
     Remove all hypernetworks from an unet.
     """
