@@ -62,7 +62,7 @@ class BasePipe:
         # Creating a stable diffusion pipeine
         args = {**args}
         if 'torch_dtype' not in args:
-            if device == 'cpu':
+            if device == torch.device('cpu'):
                 args['torch_dtype'] = torch.float32
             else:
                 args['torch_dtype'] = torch.float16
