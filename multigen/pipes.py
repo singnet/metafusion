@@ -53,6 +53,7 @@ class BasePipe:
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]]=None,
                  pipe: Optional[DiffusionPipeline] = None, **args):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
@@ -61,8 +62,10 @@ class BasePipe:
         # Creating a stable diffusion pipeine
         args = {**args}
         if 'torch_dtype' not in args:
-            args['torch_dtype']=torch.float16
-
+            if device == 'cpu':
+                args['torch_dtype'] = torch.float32
+            else:
+                args['torch_dtype'] = torch.float16
         if self.pipe is None:
             constructor_args = dict()
             if isinstance(self, Cond2ImPipe):
@@ -87,8 +90,6 @@ class BasePipe:
                     self.pipe = sd_pipe_class.from_single_file(model_id, **args)
                 else:
                     self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
-
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
