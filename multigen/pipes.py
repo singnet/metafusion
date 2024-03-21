@@ -87,7 +87,8 @@ class BasePipe:
                 else:
                     self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
 
-        self.pipe.to("cuda")
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
         self.pipe.vae.enable_tiling()
