@@ -344,7 +344,10 @@ class Cond2ImPipe(BasePipe):
             ctypes = [ctypes]
         self.ctypes = ctypes
         self._condition_image = None
-        dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
+        dtype = torch.float32
+        if torch.cuda.is_available():
+            dtype = torch.float16
+        dtype =  args.get('torch_type', dtype)
         cpath = self.get_cpath()
         cmodels = self.get_cmodels()
         sd_class = self.get_sd_class()
@@ -498,7 +501,10 @@ class InpaintingPipe(BasePipe):
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  **args):
-        dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
+        dtype = torch.float32
+        if torch.cuda.is_available():
+            dtype = torch.float16
+        dtype =  args.get('torch_type', dtype)
         cnet = ControlNetModel.from_pretrained(
             Cond2ImPipe.cpath+Cond2ImPipe.cmodels["inpaint"], torch_dtype=dtype)
         super().__init__(model_id=model_id, pipe=pipe, controlnet=cnet, **args)
