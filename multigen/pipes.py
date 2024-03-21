@@ -1,4 +1,5 @@
 import importlib
+import logging
 from enum import Enum
 
 import torch
@@ -94,8 +95,11 @@ class BasePipe:
         self.pipe.vae.enable_tiling()
         # --- the best one and seems to be enough ---
         # self.pipe.enable_sequential_cpu_offload()
-        self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
-        # self.pipe.vae.enable_xformers_memory_efficient_attention() # attention_op=None)
+        try:
+            import xformers
+            self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
+        except ImportError as e:
+            logging.warning("xformers not found, can't use efficient attention")
 
     @property
     def scheduler(self):
