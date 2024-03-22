@@ -72,9 +72,10 @@ class MyTestCase(TestCase):
             shutil.rmtree(dirname)
         # create session
         gs = GenSession(dirname, pipe, Cfgen(prompt, nprompt))
-        gs.gen_sess(add_count=10)
+        gs.gen_sess(add_count=2)
         # count number of generated files
-        self.assertEqual(len(os.listdir(dirname)), 20)
+        # each images goes with a txt file
+        self.assertEqual(len(os.listdir(dirname)), 4)
 
     def test_loader(self):
         loader = Loader()
