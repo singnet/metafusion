@@ -36,7 +36,7 @@ class MyTestCase(TestCase):
         model = self.get_model()
         # create pipe
         pipe = Prompt2ImPipe(model, pipe=self._pipeline)
-        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler")
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
         seed = 49045438434843
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
                       negative_prompt="spherical",
@@ -65,7 +65,7 @@ class MyTestCase(TestCase):
                   ["surrealism", "impressionism", "high tech", "cyberpunk"]]
 
         pipe = Prompt2ImPipe(model, pipe=self._pipeline)
-        pipe.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler")
+        pipe.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", steps=5)
         # remove directory if it exists
         dirname = "./gen_batch"
         if os.path.exists(dirname):
@@ -87,7 +87,7 @@ class MyTestCase(TestCase):
         # create prompt2im pipe
         pipeline = loader.load_pipeline(Prompt2ImPipe._class, model_id)
         prompt2image = Prompt2ImPipe(model_id, pipe=pipeline)
-        prompt2image.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", clip_skip=2)
+        prompt2image.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", clip_skip=2, steps=5)
 
         self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
                          prompt2image.pipe.unet.conv_out.weight.data_ptr(),
