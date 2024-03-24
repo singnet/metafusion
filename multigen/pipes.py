@@ -1,4 +1,5 @@
 import importlib
+import logging
 from enum import Enum
 
 import torch
@@ -52,6 +53,7 @@ class BasePipe:
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]]=None,
                  pipe: Optional[DiffusionPipeline] = None, **args):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
@@ -60,8 +62,10 @@ class BasePipe:
         # Creating a stable diffusion pipeine
         args = {**args}
         if 'torch_dtype' not in args:
-            args['torch_dtype']=torch.float16
-
+            if device == torch.device('cpu'):
+                args['torch_dtype'] = torch.float32
+            else:
+                args['torch_dtype'] = torch.float16
         if self.pipe is None:
             constructor_args = dict()
             if isinstance(self, Cond2ImPipe):
@@ -86,15 +90,17 @@ class BasePipe:
                     self.pipe = sd_pipe_class.from_single_file(model_id, **args)
                 else:
                     self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
-
-        self.pipe.to("cuda")
+        self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
         self.pipe.vae.enable_tiling()
         # --- the best one and seems to be enough ---
         # self.pipe.enable_sequential_cpu_offload()
-        self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
-        # self.pipe.vae.enable_xformers_memory_efficient_attention() # attention_op=None)
+        try:
+            import xformers
+            self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
+        except ImportError as e:
+            logging.warning("xformers not found, can't use efficient attention")
 
     @property
     def scheduler(self):
@@ -338,7 +344,10 @@ class Cond2ImPipe(BasePipe):
             ctypes = [ctypes]
         self.ctypes = ctypes
         self._condition_image = None
-        dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
+        dtype = torch.float32
+        if torch.cuda.is_available():
+            dtype = torch.float16
+        dtype =  args.get('torch_type', dtype)
         cpath = self.get_cpath()
         cmodels = self.get_cmodels()
         sd_class = self.get_sd_class()
@@ -492,7 +501,10 @@ class InpaintingPipe(BasePipe):
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  **args):
-        dtype = torch.float16 if 'torch_type' not in args else args['torch_type']
+        dtype = torch.float32
+        if torch.cuda.is_available():
+            dtype = torch.float16
+        dtype =  args.get('torch_type', dtype)
         cnet = ControlNetModel.from_pretrained(
             Cond2ImPipe.cpath+Cond2ImPipe.cmodels["inpaint"], torch_dtype=dtype)
         super().__init__(model_id=model_id, pipe=pipe, controlnet=cnet, **args)
