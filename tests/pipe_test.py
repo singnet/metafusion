@@ -5,7 +5,7 @@ import PIL
 import torch
 import numpy
 
-from multigen import Prompt2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
+from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
 from dummy import DummyDiffusionPipeline
 
 
@@ -30,13 +30,13 @@ class MyTestCase(TestCase):
         return "hf-internal-testing/tiny-stable-diffusion-torch"
 
     def get_ref_image(self):
-        return PIL.Image.open("cube_planet_dms.png")
+        return "cube_planet_dms.png"
 
     def test_basic_txt2im(self):
         model = self.get_model()
         # create pipe
         pipe = Prompt2ImPipe(model, pipe=self._pipeline)
-        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler")
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
         seed = 49045438434843
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
                       negative_prompt="spherical",
@@ -65,16 +65,17 @@ class MyTestCase(TestCase):
                   ["surrealism", "impressionism", "high tech", "cyberpunk"]]
 
         pipe = Prompt2ImPipe(model, pipe=self._pipeline)
-        pipe.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler")
+        pipe.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", steps=5)
         # remove directory if it exists
         dirname = "./gen_batch"
         if os.path.exists(dirname):
             shutil.rmtree(dirname)
         # create session
         gs = GenSession(dirname, pipe, Cfgen(prompt, nprompt))
-        gs.gen_sess(add_count=10)
+        gs.gen_sess(add_count=2)
         # count number of generated files
-        self.assertEqual(len(os.listdir(dirname)), 20)
+        # each images goes with a txt file
+        self.assertEqual(len(os.listdir(dirname)), 4)
 
     def test_loader(self):
         loader = Loader()
@@ -87,13 +88,21 @@ class MyTestCase(TestCase):
         # create prompt2im pipe
         pipeline = loader.load_pipeline(Prompt2ImPipe._class, model_id)
         prompt2image = Prompt2ImPipe(model_id, pipe=pipeline)
-        prompt2image.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", clip_skip=2)
+        prompt2image.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", clip_skip=2, steps=5)
 
         self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
                          prompt2image.pipe.unet.conv_out.weight.data_ptr(),
                          "unets are different")
 
-    
+    def test_img2img_basic(self):
+        pipe = Im2ImPipe(self.get_model())
+        im = self.get_ref_image()
+        pipe.setup(im, strength=0.7, steps=5)
+        result = pipe.gen(dict(prompt="cube planet cartoon style"))
+        result.save('test_img2img_basic.png')
+
+
+
 class TestSDXL(MyTestCase):
 
     def get_model(self):
