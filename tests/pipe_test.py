@@ -5,7 +5,7 @@ import PIL
 import torch
 import numpy
 
-from multigen import Prompt2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
+from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
 from dummy import DummyDiffusionPipeline
 
 
@@ -30,7 +30,7 @@ class MyTestCase(TestCase):
         return "hf-internal-testing/tiny-stable-diffusion-torch"
 
     def get_ref_image(self):
-        return PIL.Image.open("cube_planet_dms.png")
+        return "cube_planet_dms.png"
 
     def test_basic_txt2im(self):
         model = self.get_model()
@@ -94,7 +94,15 @@ class MyTestCase(TestCase):
                          prompt2image.pipe.unet.conv_out.weight.data_ptr(),
                          "unets are different")
 
-    
+    def test_img2img_basic(self):
+        pipe = Im2ImPipe(self.get_model())
+        im = self.get_ref_image()
+        pipe.setup(im, strength=0.7, steps=5)
+        result = pipe.gen(dict(prompt="cube planet cartoon style"))
+        result.save('test_img2img_basic.png')
+
+
+
 class TestSDXL(MyTestCase):
 
     def get_model(self):
