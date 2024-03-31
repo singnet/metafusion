@@ -1,4 +1,5 @@
 from typing import Type
+import torch
 import logging
 from diffusers import DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
 
@@ -12,7 +13,7 @@ class Loader:
     def __init__(self):
         self._pipes = dict()
 
-    def load_pipeline(self, cls: Type[DiffusionPipeline], path, **additional_args):
+    def load_pipeline(self, cls: Type[DiffusionPipeline], path, torch_dtype=torch.float16, **additional_args):
         for key, pipe in self._pipes.items():
             if key == path:
                 components = pipe.components
@@ -25,7 +26,7 @@ class Loader:
                 # but we don't need it
                 if 'controlnet' in components:
                     components.pop('controlnet')
-                return cls(**components, **additional_args)
+                return cls(**components, **additional_args).to(torch_dtype)
 
 
         if path.endswith('safetensors'):

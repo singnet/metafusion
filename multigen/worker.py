@@ -56,7 +56,7 @@ class ServiceThread(ServiceThreadBase):
                 if 'MaskedIm2ImPipe' in class_name:
                     pipe.setup(**data, original_image=str(images[0]),
                             image_painted=str(images[1]))
-                elif 'Cond2ImPipe' in class_name:
+                elif any([x in class_name for x in ('Im2ImPipe', 'Cond2ImPipe')]):
                     pipe.setup(**data, fimage=str(images[0]))
                 else:
                     pipe.setup(**data)
