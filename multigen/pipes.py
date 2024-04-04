@@ -127,6 +127,10 @@ class BasePipe:
                 self._scheduler = sch_set
             inputs.pop('scheduler')
 
+    def load_lora(self, path, multiplier=1.0):
+        self.pipe.load_lora_weights(path)
+        self.pipe_params['cross_attention_kwargs'] = {"scale": multiplier}
+
     def add_hypernet(self, path, multiplier=None):
         from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
         hypernetwork = Hypernetwork()
