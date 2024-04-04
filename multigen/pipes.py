@@ -102,6 +102,10 @@ class BasePipe:
         except ImportError as e:
             logging.warning("xformers not found, can't use efficient attention")
 
+        if hasattr(self.pipe, 'text_encoder_2'):
+            if self.pipe.text_encoder_2 is None:
+                raise AttributeError("text_encoder_2 is None")
+
     @property
     def scheduler(self):
         return self._scheduler
@@ -188,7 +192,10 @@ class Prompt2ImPipe(BasePipe):
             super().__init__(model_id=model_id, pipe=pipe, **args)
         else:
             #StableDiffusionKDiffusionPipeline
-            super().__init__(model_id=model_id, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
+            try:
+                super().__init__(model_id=model_id, pipe=pipe, custom_pipeline="lpw_stable_diffusion_xl", **args)
+            except AttributeError as e:
+                super().__init__(model_id=model_id, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
 
     def setup(self, width=768, height=768, guidance_scale=7.5, **args):
         super().setup(**args)

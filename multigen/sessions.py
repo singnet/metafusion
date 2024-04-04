@@ -10,7 +10,7 @@ class GenSession:
     def __init__(self, session_dir, pipe, config: Cfgen, name_prefix=""):
         self.session_dir = session_dir
         self.pipe = pipe
-        self.model_id = pipe._model_id
+        self.model_id = pipe.model_id
         self.confg = config
         self.last_conf = None
         self.name_prefix = name_prefix
