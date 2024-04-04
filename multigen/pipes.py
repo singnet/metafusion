@@ -6,6 +6,7 @@ import torch
 
 from PIL import Image, ImageFilter
 import cv2
+import os
 import copy
 import numpy as np
 from typing import Optional, Type
@@ -57,7 +58,7 @@ class BasePipe:
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
-        self._model_id = model_id
+        self._model_id = os.path.expanduser(model_id)
         self.pipe_params = dict()
         # Creating a stable diffusion pipeine
         args = {**args}
@@ -72,24 +73,24 @@ class BasePipe:
                 constructor_args['controlnet'] = args['controlnet']
 
             if sd_pipe_class is None:
-                if model_id.endswith('.safetensors'):
+                if self.model_id.endswith('.safetensors'):
                     try:
-                        self.pipe = StableDiffusionPipeline.from_single_file(model_id, **args)
+                        self.pipe = StableDiffusionPipeline.from_single_file(self.model_id, **args)
                     except TypeError as e:
-                        self.pipe = StableDiffusionXLPipeline.from_single_file(model_id, **args)
+                        self.pipe = StableDiffusionXLPipeline.from_single_file(self.model_id, **args)
                 else:
                     # we can't use specific class, because we dont know if it is sdxl
-                    self.pipe = DiffusionPipeline.from_pretrained(model_id, **args)
+                    self.pipe = DiffusionPipeline.from_pretrained(self.model_id, **args)
                     if 'custom_pipeline' not in args:
                         # create correct class if custom_pipeline is not specified
                         # at this stage we know that the model is sdxl or sd
                         self.pipe = self.from_pipe(self.pipe, **constructor_args)
 
             else:
-                if model_id.endswith('.safetensors'):
-                    self.pipe = sd_pipe_class.from_single_file(model_id, **args)
+                if self.model_id.endswith('.safetensors'):
+                    self.pipe = sd_pipe_class.from_single_file(self.model_id, **args)
                 else:
-                    self.pipe = sd_pipe_class.from_pretrained(model_id, **args)
+                    self.pipe = sd_pipe_class.from_pretrained(self.model_id, **args)
         self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
