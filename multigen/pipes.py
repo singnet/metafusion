@@ -17,6 +17,7 @@ from diffusers import StableDiffusionControlNetInpaintPipeline, StableDiffusionX
 from diffusers.schedulers import KarrasDiffusionSchedulers
 
 from .pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
+from .pipelines.masked_stable_diffusion_xl_img2img import MaskedStableDiffusionXLImg2ImgPipeline
 from transformers import CLIPProcessor, CLIPTextModel
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 # from diffusers import StableDiffusionKDiffusionPipeline
@@ -260,6 +261,7 @@ class Im2ImPipe(BasePipe):
 
 class MaskedIm2ImPipe(Im2ImPipe):
     _class = MaskedStableDiffusionImg2ImgPipeline
+    _classxl = MaskedStableDiffusionXLImg2ImgPipeline
 
     def __init__(self, *args, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **kwargs):
         super().__init__(*args, pipe=pipe, **kwargs)
@@ -268,7 +270,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
         self._original_image = None
         self._mask_blur = None
 
-    def setup(self, original_image=None, image_painted=None, mask=None, blur=4, **kwargs):
+    def setup(self, original_image=None, image_painted=None, mask=None, blur=4, blur_compose=4, sample_mode='sample', **kwargs):
         self._original_image = Image.open(original_image) if isinstance(original_image, str) else original_image
         self._image_painted = Image.open(image_painted) if isinstance(image_painted, str) else image_painted
         # there are two options:
@@ -282,23 +284,35 @@ class MaskedIm2ImPipe(Im2ImPipe):
         self._mask = mask
         input_image = self._image_painted if self._image_painted is not None else self._original_image
         input_image = np.array(input_image)
+
         super().setup(fimage=None, image=input_image / input_image.max(), **kwargs)
         pil_mask = mask
         if not isinstance(self._mask, Image.Image):
             pil_mask = Image.fromarray(mask)
             if pil_mask.mode != "L":
                 pil_mask = pil_mask.convert("L")
+        self._mask_blur = self.blur_mask(pil_mask, blur)
+        self._mask_compose = self.blur_mask(pil_mask, blur_compose)
+        self._sample_mode = sample_mode
+
+    def blur_mask(self, pil_mask, blur):
         mask_blur = pil_mask.filter(ImageFilter.GaussianBlur(radius=blur))
         mask_blur = np.array(mask_blur)
-        self._mask_blur = np.tile(mask_blur / mask_blur.max(), (3, 1, 1)).transpose(1,2,0)
+        return np.tile(mask_blur / mask_blur.max(), (3, 1, 1)).transpose(1,2,0)
 
     def gen(self, inputs):
         inputs = inputs.copy()
         inputs.update(mask=self._mask)
+        if 'sample_mode' not in inputs:
+            inputs['sample_mode'] = self._sample_mode
+
+        original_image = self._original_image
+        original_image = np.array(original_image)
+        inputs['original_image'] = original_image / original_image.max()
         img_gen = super().gen(inputs)
 
         # compose with original using mask
-        img_compose = self._mask_blur * img_gen + (1 - self._mask_blur) * self._original_image
+        img_compose = self._mask_compose * img_gen + (1 - self._mask_compose) * self._original_image
         # convert to PIL image
         img_compose = Image.fromarray(img_compose.astype(np.uint8))
         return img_compose
