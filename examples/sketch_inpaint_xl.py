@@ -5,8 +5,8 @@ import numpy
 
 
 def main():
-    model_id = '/home/imgen/models/SDXL/juggernautXL_v8Rundiffusion.safetensors'
     model_id = 'frankjoshua/juggernautXL_v8Rundiffusion'
+    model_id = '/home/imgen/models/SDXL/juggernautXL_v8Rundiffusion.safetensors'
     img = PIL.Image.open("./mech_beard_sigm.png")
     # read image with mask painted over
     img_paint = numpy.array(PIL.Image.open("./mech_beard_sigm_mask.png"))
