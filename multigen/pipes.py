@@ -82,10 +82,10 @@ class BasePipe:
                 else:
                     # we can't use specific class, because we dont know if it is sdxl
                     self.pipe = DiffusionPipeline.from_pretrained(self.model_id, **args)
-                    if 'custom_pipeline' not in args:
-                        # create correct class if custom_pipeline is not specified
-                        # at this stage we know that the model is sdxl or sd
-                        self.pipe = self.from_pipe(self.pipe, **constructor_args)
+                if 'custom_pipeline' not in args:
+                    # create correct class if custom_pipeline is not specified
+                    # at this stage we know that the model is sdxl or sd
+                    self.pipe = self.from_pipe(self.pipe, **constructor_args)
 
             else:
                 if self.model_id.endswith('.safetensors'):
