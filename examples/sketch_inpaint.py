@@ -16,12 +16,14 @@ def main():
     scheduler = "EulerAncestralDiscreteScheduler" # gives good results
 
     pipe = MaskedIm2ImPipe(model_dir+model_id)
-    pipe.setup(original_image=img, image_painted=img_paint, strength=0.75,
+    pipe.setup(original_image=img, image_painted=img_paint, strength=0.85,
                scheduler=scheduler, guidance_scale=7, clip_skip=3, blur=blur)
 
     prompt = "a man wearing a mask"
-    gs = GenSession("./masked_im2im", pipe, Cfgen(prompt, "", seeds=range(10)))
-    gs.gen_sess(add_count=10)
+    init = 84958344
+    count = 10
+    gs = GenSession("./masked_im2im", pipe, Cfgen(prompt, "", seeds=range(init, init + count)))
+    gs.gen_sess(add_count=count)
 
 
 if __name__ == "__main__":
