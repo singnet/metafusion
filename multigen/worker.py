@@ -69,7 +69,7 @@ class ServiceThread(ServiceThreadBase):
                                 callback = lambda: _update(sess, data, gs))
                     if 'finish_callback' in data:
                         data['finish_callback']()
-                except RuntimeError as e:
+                except (RuntimeError, TypeError) as e:
                     if 'finish_callback' in data:
                         self.logger.error("error in generation", exc_info=e)
                         data['finish_callback']("Can't generate image due to error")
