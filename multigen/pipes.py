@@ -222,14 +222,18 @@ class Im2ImPipe(BasePipe):
         super().setup(**args)
         self.fname = fimage
         self._input_image = Image.open(fimage).convert("RGB") if image is None else image
-        if scale is not None:
-            if not isinstance(scale, list):
-                scale = [8 * (int(self._input_image.size[i] * scale) // 8) for i in range(2)]
-            self._input_image = self._input_image.resize((scale[0], scale[1]))
+        self._input_image = self.scale_image(self._input_image, scale)
         self.pipe_params.update({
             "strength": strength,
             "guidance_scale": gscale
         })
+
+    def scale_image(self, image, scale):
+        if scale is not None:
+            if not isinstance(scale, list):
+                scale = [8 * (int(image.size[i] * scale) // 8) for i in range(2)]
+            return image.resize((scale[0], scale[1]))
+        return image
 
     def get_config(self):
         cfg = super().get_config()
@@ -261,9 +265,16 @@ class MaskedIm2ImPipe(Im2ImPipe):
         self._original_image = None
         self._mask_blur = None
 
-    def setup(self, original_image=None, image_painted=None, mask=None, blur=4, blur_compose=4, sample_mode='sample', **kwargs):
+    def setup(self, original_image=None, image_painted=None, mask=None, blur=4, blur_compose=4, sample_mode='sample', scale=None, **kwargs):
         self._original_image = Image.open(original_image) if isinstance(original_image, str) else original_image
         self._image_painted = Image.open(image_painted) if isinstance(image_painted, str) else image_painted
+
+        input_image = self._image_painted if self._image_painted is not None else self._original_image
+        super().setup(fimage=None, image=input_image, scale=scale, **kwargs)
+        if self._original_image is not None:
+            self._original_image = self.scale_image(self._original_image, scale)
+        if self._image_painted is not None:
+            self._image_painted = self.scale_image(self._image_painted, scale)
         # there are two options:
         # 1. mask is provided
         # 2. mask is computed from difference between original_image and image_painted
@@ -273,10 +284,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
         else:
             assert mask is not None
         self._mask = mask
-        input_image = self._image_painted if self._image_painted is not None else self._original_image
-        input_image = np.array(input_image)
 
-        super().setup(fimage=None, image=input_image / input_image.max(), **kwargs)
         pil_mask = mask
         if not isinstance(self._mask, Image.Image):
             pil_mask = Image.fromarray(mask)
