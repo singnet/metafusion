@@ -48,6 +48,8 @@ class ServiceThread(ServiceThreadBase):
 
                     pipe_name = sess.get('pipe', 'Prompt2ImPipe')
                     model_id = str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]]['id'])
+                    loras = [str(self.cwd/self.config["model_dir"]/'Lora'/self.models['lora'][x]['id']) for x in sess.get("loras", [])]
+                    data['loras'] = loras
                     is_xl = self.models['base'][sess["model"]]['xl']
                     pipe = self.get_pipeline(pipe_name, model_id, cnet=data.get('cnet', None), xl=is_xl)
                     class_name = str(pipe.__class__)
@@ -63,15 +65,16 @@ class ServiceThread(ServiceThreadBase):
                         pipe.setup(**data)
                     # TODO: add negative prompt to parameters
                     nprompt = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers, fewer fingers, lowres, nude, bad hands, duplicate heads, bad anatomy, bad crop"
+                    seeds = data.get('seeds', None)
                     gs = GenSession(self.get_image_pathname(data["session_id"], None),
-                                    pipe, Cfgen(data["prompt"], nprompt))
+                                    pipe, Cfgen(data["prompt"], nprompt, seeds=seeds))
                     gs.gen_sess(add_count = data["count"],
                                 callback = lambda: _update(sess, data, gs))
                     if 'finish_callback' in data:
                         data['finish_callback']()
-                except (RuntimeError, TypeError) as e:
+                except (RuntimeError, TypeError, NotImplementedError) as e:
+                    self.logger.error("error in generation", exc_info=e)
                     if 'finish_callback' in data:
-                        self.logger.error("error in generation", exc_info=e)
                         data['finish_callback']("Can't generate image due to error")
                 finally:
                     with self._lock:
