@@ -92,7 +92,8 @@ class BasePipe:
                     self.pipe = sd_pipe_class.from_single_file(self.model_id, **args)
                 else:
                     self.pipe = sd_pipe_class.from_pretrained(self.model_id, **args)
-        self.pipe.to(device)
+        if self.pipe.device != device:
+            self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
         self.pipe.vae.enable_tiling()

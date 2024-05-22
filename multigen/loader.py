@@ -35,7 +35,8 @@ class Loader:
     def __init__(self):
         self._pipes = dict()
 
-    def load_pipeline(self, cls: Type[DiffusionPipeline], path, torch_dtype=torch.float16, **additional_args):
+    def load_pipeline(self, cls: Type[DiffusionPipeline], path, torch_dtype=torch.float16, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            , **additional_args):
         for key, pipe in self._pipes.items():
             if key == path:
                 pipe = copy_pipe(pipe)
@@ -49,12 +50,13 @@ class Loader:
                 # but we don't need it
                 if 'controlnet' in components:
                     components.pop('controlnet')
-                return cls(**components, **additional_args).to(torch_dtype)
+                return cls(**components, **additional_args)
 
         if path.endswith('safetensors'):
             result = cls.from_single_file(path, **additional_args)
         else:
             result = cls.from_pretrained(path, **additional_args)
+        result = result.to(torch_dtype).to(device)
         self.register_pipeline(result, path)
         result = copy_pipe(result)
         return result
