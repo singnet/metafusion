@@ -63,7 +63,6 @@ class MyTestCase(TestCase):
                   ["green colors", "dream colors", "neon glowing"],
                   ["8k RAW photo, masterpiece, super quality", "artwork", "unity 3D"],
                   ["surrealism", "impressionism", "high tech", "cyberpunk"]]
-
         pipe = Prompt2ImPipe(model, pipe=self._pipeline)
         pipe.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", steps=5)
         # remove directory if it exists
@@ -82,14 +81,22 @@ class MyTestCase(TestCase):
         model_id = self.get_model()
 
         # load inpainting pipe
-        pipeline = loader.load_pipeline(MaskedIm2ImPipe._class, model_id)
+        is_xl = 'TestSDXL' in str(self.__class__)
+        if is_xl:
+            cls = MaskedIm2ImPipe._classxl
+        else:
+            cls = MaskedIm2ImPipe._class
+        pipeline = loader.load_pipeline(cls, model_id)
         inpaint = MaskedIm2ImPipe(model_id, pipe=pipeline)
 
         # create prompt2im pipe
-        pipeline = loader.load_pipeline(Prompt2ImPipe._class, model_id)
+        if is_xl:
+            cls = Prompt2ImPipe._classxl
+        else:
+            cls = Prompt2ImPipe._class
+        pipeline = loader.load_pipeline(cls, model_id)
         prompt2image = Prompt2ImPipe(model_id, pipe=pipeline)
         prompt2image.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", clip_skip=2, steps=5)
-
         self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
                          prompt2image.pipe.unet.conv_out.weight.data_ptr(),
                          "unets are different")

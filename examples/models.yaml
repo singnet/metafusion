@@ -1,0 +1,19 @@
+base:
+  netta:
+    id: SDXL/netaArtXL_v10.safetensors
+    xl: True
+  sdxl1:
+    id: SDXL/stable-diffusion-xl-base-1.0/sd_xl_base_1.0.safetensors
+    xl: True
+lora:
+  hypersd4steps:
+    id: Hyper-SDXL-4steps-lora.safetensors
+    xl: True
+
+pipes:
+    prompt2image:
+        name: "Prompt to Image"
+        classname: Prompt2ImPipe
+        need_imgs: False
+        needs_cnet: False
+

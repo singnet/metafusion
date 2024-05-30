@@ -92,7 +92,8 @@ class BasePipe:
                     self.pipe = sd_pipe_class.from_single_file(self.model_id, **args)
                 else:
                     self.pipe = sd_pipe_class.from_pretrained(self.model_id, **args)
-        self.pipe.to(device)
+        if self.pipe.device != device:
+            self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
         self.pipe.vae.enable_tiling()
@@ -131,7 +132,6 @@ class BasePipe:
 
     def load_lora(self, path, multiplier=1.0):
         self.pipe.load_lora_weights(path)
-        self.pipe.fuse_lora(lora_scale=multiplier)
 
     def add_hypernet(self, path, multiplier=None):
         from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
@@ -155,7 +155,7 @@ class BasePipe:
         cfg.update(self.pipe_params)
         return cfg
 
-    def setup(self, steps=50, clip_skip=0, **args):
+    def setup(self, steps=50, clip_skip=0, loras=[], **args):
         self.pipe_params = { 'num_inference_steps': steps }
         assert clip_skip >= 0
         assert clip_skip <= 10
@@ -165,6 +165,8 @@ class BasePipe:
         if 'timestep_spacing' in args:
             self.pipe.scheduler = self.pipe.scheduler.from_config(self.pipe.scheduler.config, timestep_spacing = args['timestep_spacing'])
             args.pop('timestep_spacing')
+        for lora in loras:
+            self.load_lora(lora)
 
     def from_pipe(self, pipe, **args):
         if isinstance(pipe, StableDiffusionXLPipeline):
