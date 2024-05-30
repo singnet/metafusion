@@ -50,11 +50,32 @@ def add_scheduler(pipe, scheduler):
 
 
 class BasePipe:
+    """
+    Base class for all pipelines.
+
+    Provides some basic functionality to load and save models,
+    as well as pipeline configuration
+    """
     _class = None
+    _classxl = None
 
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]]=None,
                  pipe: Optional[DiffusionPipeline] = None, **args):
+        """
+        Constructor
+
+        Args:
+            model_id (str):
+                path or id of the model to load
+            sd_pipe_class (Type, *optional*):
+              a subclass of DiffusionPipeline to load model to.
+            pipe (DiffusionPipeline, *optional*):
+                an instance of the pipeline to use,
+                if provided the model_id won't be used for loading.
+            **args:
+                additional arguments passed to sd_pipe_class constructor
+        """
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.pipe = pipe
         self._scheduler = None
@@ -111,6 +132,7 @@ class BasePipe:
 
     @property
     def scheduler(self):
+        """The scheduler used by the pipeline"""
         return self._scheduler
 
     @property
@@ -119,6 +141,7 @@ class BasePipe:
 
     @property
     def model_id(self):
+        """The model id used by the pipeline"""
         return self._model_id
 
     def try_set_scheduler(self, inputs):
@@ -132,9 +155,12 @@ class BasePipe:
 
     def load_lora(self, path, multiplier=1.0):
         self.pipe.load_lora_weights(path)
+        if 'cross_attention_kwargs' not in self.pipe_params:
+            self.pipe_params['cross_attention_kwargs'] = {}
+        self.pipe_params['cross_attention_kwargs']["scale"] = multiplier
 
     def add_hypernet(self, path, multiplier=None):
-        from . hypernet import add_hypernet, clear_hypernets, Hypernetwork
+        from . hypernet import add_hypernet, Hypernetwork
         hypernetwork = Hypernetwork()
         hypernetwork.load(path)
         self._hypernets.append(path)
@@ -144,10 +170,16 @@ class BasePipe:
         add_hypernet(self.pipe.unet, hypernetwork)
 
     def clear_hypernets(self):
+        from . hypernet import clear_hypernets
         clear_hypernets(self.pipe.unet)
         self._hypernets = []
 
     def get_config(self):
+        """
+        Return parameters for this model.
+
+        :return: dict
+        """
         cfg = {"hypernetworks": self.hypernets }
         cfg.update({"model_id": self.model_id })
         cfg['scheduler'] = dict(self.pipe.scheduler.config)
@@ -156,6 +188,23 @@ class BasePipe:
         return cfg
 
     def setup(self, steps=50, clip_skip=0, loras=[], **args):
+        """
+        Setup pipeline for generation.
+
+        Args:
+            steps (int, *optional*):
+                number of inference steps
+            clip_skip (int, *optional*):
+                number of top layers to skip in clip model
+            **args (dict, *optional*):
+                dict with additional parameters such as scheduler and timestep_spacing,
+                other parameters will be ignored.
+                scheduler is a scheduler class names from diffusers.schedulers module
+                timestep_spacing (`str`, defaults to `"leading"`):
+                The way the timesteps should be scaled. Refer to Table 2 of the [Common Diffusion Noise Schedules and
+                Sample Steps are Flawed](https://huggingface.co/papers/2305.08891) for more information.
+            :return: None
+        """
         self.pipe_params = { 'num_inference_steps': steps }
         assert clip_skip >= 0
         assert clip_skip <= 10
@@ -178,6 +227,9 @@ class BasePipe:
 
 
 class Prompt2ImPipe(BasePipe):
+    """
+    Base class for all pipelines that take a prompt and return an image.
+    """
     _class = StableDiffusionPipeline
     _classxl = StableDiffusionXLPipeline
 
@@ -193,7 +245,20 @@ class Prompt2ImPipe(BasePipe):
             except AttributeError as e:
                 super().__init__(model_id=model_id, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
 
-    def setup(self, width=768, height=768, guidance_scale=7.5, **args):
+    def setup(self, width=768, height=768, guidance_scale=7.5, **args) -> None:
+        """
+        Setup pipeline for generation.
+
+        Args:
+            width (int, *optional*):
+                image width (default: 768)
+            height (int, *optional*):
+                image height (default: 768)
+            guidance_scale (float, *optional*):
+                guidance scale for the model (default: 7.5)
+            **args:
+                additional arguments passed to BasePipe setup method
+        """
         super().setup(**args)
         self.pipe_params.update({
             "width": width,
@@ -202,6 +267,17 @@ class Prompt2ImPipe(BasePipe):
         })
 
     def gen(self, inputs: dict):
+        """
+        Generate an image from a prompt.
+
+        Args:
+            inputs (dict):
+                input dictionary containing the prompt and other parameters
+
+        Returns:
+            image (Pil.Image.Image):
+                generated image
+        """
         kwargs = self.pipe_params.copy()
         # we can override pipe parameters
         # so we update kwargs with inputs after pipe_params
@@ -225,6 +301,19 @@ class Im2ImPipe(BasePipe):
         self._input_image = None
 
     def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None, **args):
+        """
+        Setup pipeline for generation.
+
+        Args:
+            fimage (str): File path to the input image.
+            image (Image.Image, *optional*): Input image. Defaults to None.
+            strength (float, *optional*):
+                Strength image modification. Defaults to 0.75. A lower strength values keep result close to the input image.
+                 value of 1 means input image more or less ignored.
+            gscale (float, *optional*): Guidance scale for the model. Defaults to 7.5.
+            scale (list or float, *optional*): Scale factor for the input image. Defaults to None.
+            **args: Additional arguments passed to BasePipe setup method.
+        """
         super().setup(**args)
         self.fname = fimage
         self._input_image = Image.open(fimage).convert("RGB") if image is None else image
@@ -235,6 +324,16 @@ class Im2ImPipe(BasePipe):
         })
 
     def scale_image(self, image, scale):
+        """
+        Scale the input image.
+
+        Args:
+            image (Image.Image): Input image.
+            scale (list or float, optional): Scale factor for the input image. Defaults to None.
+
+        Returns:
+            Image.Image: Scaled input image.
+        """
         if scale is not None:
             if not isinstance(scale, list):
                 scale = [8 * (int(image.size[i] * scale) // 8) for i in range(2)]
@@ -242,6 +341,12 @@ class Im2ImPipe(BasePipe):
         return image
 
     def get_config(self):
+        """
+        Return parameters for this pipeline.
+
+        Returns:
+            dict: pipeline parameters.
+        """
         cfg = super().get_config()
         cfg.update({
             "source_image": self.fname,
@@ -250,6 +355,15 @@ class Im2ImPipe(BasePipe):
         return cfg
 
     def gen(self, inputs: dict):
+        """
+        Generate an image from a prompt and input image.
+
+        Args:
+            inputs (dict): Input dictionary containing the prompt and other parameters overriding pipeline configuration.
+
+        Returns:
+            Pil.Image.Image: Generated image.
+        """
         kwargs = self.pipe_params.copy()
         # we can override pipe parameters
         # so we update kwargs with inputs after pipe_params
@@ -261,17 +375,56 @@ class Im2ImPipe(BasePipe):
 
 
 class MaskedIm2ImPipe(Im2ImPipe):
+    """
+    A pipeline for image-to-image translation with masking.
+
+    MaskedIm2ImPipe is image to image pipeline that uses mask to redraw only certain parts of the input image.
+    It can be used as an inpainting pipeline with any non-inpaint models.
+    The pipeline computes mask from the difference between
+    original image and image with a mask on it. Color of the mask affects the result.
+    """
+
     _class = MaskedStableDiffusionImg2ImgPipeline
     _classxl = MaskedStableDiffusionXLImg2ImgPipeline
 
     def __init__(self, *args, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **kwargs):
+        """
+        Initialize a MaskedIm2ImPipe instance.
+
+        Args:
+            *args: arguments passed to Im2ImPipe.
+            pipe (StableDiffusionImg2ImgPipeline, *optional*): The underlying pipeline. Defaults to None.
+            **kwargs: Additional keyword arguments passed to Im2ImPipe constructor.
+        """
         super().__init__(*args, pipe=pipe, **kwargs)
         self._mask = None
         self._image_painted = None
         self._original_image = None
         self._mask_blur = None
 
-    def setup(self, original_image=None, image_painted=None, mask=None, blur=4, blur_compose=4, sample_mode='sample', scale=None, **kwargs):
+    def setup(self, original_image=None, image_painted=None, mask=None, blur=4,
+              blur_compose=4, sample_mode='sample', scale=None, **kwargs):
+        """
+        Set up the pipeline.
+
+        Args:
+           original_image (str or Image.Image, *optional*):
+                The original image. Defaults to None.
+           image_painted (str or Image.Image, *optional*):
+                The painted image. Defaults to None.
+           mask (array-like or Image.Image, *optional*):
+               The mask. Defaults to None. If None tt will be computed from the difference
+               between original_image and image_painted
+           blur (int, *optional*):
+                The blur radius for the mask. Defaults to 4.
+           blur_compose (int, *optional*):
+                The blur radius for composing the original and generated images. Defaults to 4.
+           sample_mode (str, *optional*):
+                control latents initialisation for the inpaint area, can be one of sample, argmax, random Defaults to 'sample'.
+           scale (list or float, *optional*):
+                The scale factor for resizing of the input image. Defaults to None.
+           **kwargs: Additional keyword arguments passed to Im2ImPipe constructor.
+        """
         self._original_image = Image.open(original_image) if isinstance(original_image, str) else original_image
         self._image_painted = Image.open(image_painted) if isinstance(image_painted, str) else image_painted
 
@@ -370,6 +523,20 @@ class Cond2ImPipe(BasePipe):
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  ctypes=["soft"], model_type=ControlnetType.SD, **args):
+        """
+        Constructor
+
+        Args:
+            model_id (str):
+                Path or identifier of the model to load.
+            pipe (StableDiffusion(XL)ControlNetPipeline, *optional*):
+                An instance of the pipeline to use. If provided, `model_id` won't be used for loading.
+            model_type (ControlnetType, *optional*):
+                determines whether it's SD or SDXL model, defaults to ControlnetType.SD
+            **args:
+                Additional arguments passed to the `BasePipe` constructor.
+
+        """
         self.model_type = model_type
         if not isinstance(ctypes, list):
             ctypes = [ctypes]
@@ -417,7 +584,27 @@ class Cond2ImPipe(BasePipe):
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cclass
 
-    def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
+    def setup(self, fimage, width=None, height=None,
+              image=None, cscales=None, guess_mode=False, **args):
+        """
+        Set up the pipeline with the given parameters.
+
+        Args:
+            fimage (str):
+                The path to the input image file.
+            width (int, *optional*):
+                The width of the generated image. Defaults to the width of the input image.
+            height (int, *optional*):
+                The height of the generated image. Defaults to the height of the input image.
+            image (PIL.Image.Image, *optional*):
+                The input image. Defaults to None. fimage should be None if this argument is provided.
+            cscales (list, optional):
+                The list of conditioning scales. Defaults to None.
+            guess_mode (bool, optional):
+                Whether to use guess mode. Defaults to False.
+                it enables image generation without text prompt.
+            **args: Additional arguments for the pipeline setup.
+        """
         super().setup(**args)
         # TODO: allow multiple input images for multiple control nets
         self.fname = fimage
@@ -452,6 +639,15 @@ class Cond2ImPipe(BasePipe):
         return cfg
 
     def gen(self, inputs):
+        """
+        Generate an image from the given inputs.
+
+        Args:
+            inputs (dict): The dictionary of input parameters.
+
+        Returns:
+            PIL.Image.Image: The generated image.
+        """
         inputs = {**inputs}
         inputs.update(self.pipe_params)
         inputs.update({"image": self._condition_image})
@@ -460,13 +656,32 @@ class Cond2ImPipe(BasePipe):
 
 
 class CIm2ImPipe(Cond2ImPipe):
-
+    """
+    A pipeline for conditional image-to-image generation
+    where the conditional image is derived from the input image.
+    The processing of the input image depends on the specified conditioning type(s).
+    """
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  ctypes=["soft"], model_type=ControlnetType.SD, **args):
+
+        """
+        Initialize the CIm2ImPipe.
+
+        Args:
+            model_id (str):
+                The identifier of the model to load.
+            pipe (StableDiffusion(XL)ControlNetPipeline, *optional*):
+                An instance of the pipeline to use. If provided, the model_id won't be used for loading. Defaults to None.
+            ctypes (list of str, optional):
+                The types of conditioning to apply to the input image. Defaults to ["soft"].
+                can be one of canny, pose, soft, soft-sobel, depth, None
+            model_type (ControlnetType, optional):
+                The type of ControlNet model to use(SD or SDXL). Defaults to ControlnetType.SD.
+            **args:
+                Additional arguments passed to the Cond2ImPipe constructor.
+        """
         super().__init__(model_id=model_id, pipe=pipe, ctypes=ctypes, model_type=model_type, **args)
-        # The difference from Cond2ImPipe is that the conditional image is not
-        # taken as input but is obtained from an ordinary image, so this image
-        # should be processed, and the processor depends on the conditioning type
+
         if "soft" in ctypes:
             from controlnet_aux import PidiNetDetector, HEDdetector
             self.processor = HEDdetector.from_pretrained('lllyasviel/Annotators')
@@ -527,11 +742,26 @@ class CIm2ImPipe(Cond2ImPipe):
 
 # TODO: does it make sense to inherint it from Cond2Im or CIm2Im ?
 class InpaintingPipe(BasePipe):
+    """
+    A pipeline for inpainting images using ControlNet models.
+    """
+
     _class = StableDiffusionControlNetInpaintPipeline
     _classxl = StableDiffusionXLControlNetInpaintPipeline
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  **args):
+        """
+        Initialize the InpaintingPipe.
+
+        Args:
+            model_id (str):
+                The identifier of the model to load.
+            pipe (StableDiffusion(XL)ControlNetPipeline, *optional*):
+                An instance of the pipeline to use. If provided, the model_id won't be used for loading. Defaults to None.
+            **args:
+                Additional arguments passed to the BasePipe constructor.
+        """
         dtype = torch.float32
         if torch.cuda.is_available():
             dtype = torch.float16
@@ -544,6 +774,19 @@ class InpaintingPipe(BasePipe):
         self.pipe.scheduler = DDIMScheduler.from_config(self.pipe.scheduler.config)
 
     def setup(self, fimage, mask_image, image=None, **args):
+        """
+        Set up the pipeline for inpainting with the given image and mask.
+
+        Args:
+            fimage:
+                The path to the base image to be inpainted.
+            mask_image:
+                The mask image indicating the areas to be inpainted.
+            image (optional):
+                An additional image input for processing. Defaults to None.
+            **args:
+                Additional arguments passed to the BasePipe setup method.
+        """
         super().setup(**args)
         # TODO: allow multiple input images for multiple control nets
         self.fname = fimage
@@ -560,6 +803,18 @@ class InpaintingPipe(BasePipe):
         })
 
     def gen(self, inputs):
+        """
+        Generate an inpainted image using the pipeline.
+
+        Args:
+            inputs (dict):
+                A dictionary of additional parameters to pass to the pipeline.
+
+        Returns:
+            PIL.Image:
+                The generated inpainted image.
+        """
+
         inputs = {**inputs}
         inputs.update(self.pipe_params)
         inputs.update({

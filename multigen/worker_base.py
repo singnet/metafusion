@@ -12,6 +12,9 @@ from .loader import Loader
 
 
 class ServiceThreadBase(threading.Thread):
+    """
+    Base class implementing the worker thread for image generation
+    """
     def __init__(self, cfg_file):
         super().__init__(name='imgen', daemon=False)
         cfg_file = Path(cfg_file)
@@ -42,9 +45,27 @@ class ServiceThreadBase(threading.Thread):
 
     @property
     def pipes(self):
+        """
+        Get the list of available pipes.
+        """
         return self.models['pipes']
 
     def open_session(self, **args):
+        """
+        Open a new session for a user.
+
+        Parameters:
+           **args (dict): Keyword arguments containing the session details.
+               user (str): The username of the session owner.
+               model (str): The name of the model to use for the session, the one specified in config
+                   file under "base" field.
+               pipe: (str): The name of the pipe to use for the session, the one specified in models config
+                   file under "pipes" field.
+               project (str): The name of the project to generate images.
+
+        Returns:
+           dict: A dictionary containing the session ID(session_id) and an error message if applicable.
+        """
         user = args["user"]
         with self._lock:
             for s in self.sessions:
