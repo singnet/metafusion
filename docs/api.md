@@ -181,4 +181,18 @@ if 'error' not in result:
 
 ```
 
+**GenSession**
+
+This class together with *Cfgen* is used by *ServiceThread* 
+to generate images.
+
+
+```
+nprompt = "jpeg artifacts, blur, distortion, lowres, bad anatomy, bad crop"
+prompt = "biological lab with computers and exotic flowers, green colors"
+pipe = Prompt2ImPipe(model_id)
+pipe.setup(width=768, height=768)
+gs = GenSession("./_projects/biolab", pipe, Cfgen(prompt, nprompt))
+gs.gen_sess(add_count=10)
+```
 
