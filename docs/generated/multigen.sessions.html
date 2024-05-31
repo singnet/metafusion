@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module multigen.sessions</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="multigen.html"><font color="#ffffff">multigen</font></a>.sessions</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/imgen/projects/metafusion/multigen/sessions.py">/home/imgen/projects/metafusion/multigen/sessions.py</a></font></td></tr></table>
+    <p></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="json.html">json</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="torch.html">torch</a><br>
+</td><td width="25%" valign=top><a href="multigen.util.html">multigen.util</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="multigen.sessions.html#GenSession">GenSession</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="GenSession">class <strong>GenSession</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="#GenSession">GenSession</a>(session_dir,&nbsp;pipe,&nbsp;config:&nbsp;multigen.prompting.Cfgen,&nbsp;name_prefix='')<br>
+&nbsp;<br>
+<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="GenSession-__init__"><strong>__init__</strong></a>(self, session_dir, pipe, config: multigen.prompting.Cfgen, name_prefix='')</dt><dd><tt>Initialize&nbsp;a&nbsp;<a href="#GenSession">GenSession</a>&nbsp;instance.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;session_dir&nbsp;(str):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;directory&nbsp;to&nbsp;store&nbsp;the&nbsp;session&nbsp;files.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pipe&nbsp;(Pipe):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;pipeline&nbsp;<a href="builtins.html#object">object</a>&nbsp;for&nbsp;generating&nbsp;images.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;config&nbsp;(Cfgen):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;configuration&nbsp;<a href="builtins.html#object">object</a>&nbsp;for&nbsp;the&nbsp;generation&nbsp;process.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;name_prefix&nbsp;(str,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;prefix&nbsp;for&nbsp;the&nbsp;generated&nbsp;file&nbsp;names.&nbsp;Defaults&nbsp;to&nbsp;"".</tt></dd></dl>
+
+<dl><dt><a name="GenSession-gen_sess"><strong>gen_sess</strong></a>(self, add_count=0, save_img=True, drop_cfg=False, force_collect=False, callback=None, save_metadata=False)</dt><dd><tt>Run&nbsp;image&nbsp;generation&nbsp;session<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;add_count&nbsp;(int,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;number&nbsp;of&nbsp;additional&nbsp;iterations&nbsp;to&nbsp;add.&nbsp;Defaults&nbsp;to&nbsp;0.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;save_img&nbsp;(bool,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;to&nbsp;save&nbsp;the&nbsp;generated&nbsp;images&nbsp;on&nbsp;local&nbsp;filesystem.&nbsp;Defaults&nbsp;to&nbsp;True.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;drop_cfg&nbsp;(bool,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If&nbsp;true&nbsp;don't&nbsp;save&nbsp;configuration&nbsp;file&nbsp;for&nbsp;each&nbsp;image.&nbsp;Defaults&nbsp;to&nbsp;False.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;force_collect&nbsp;(bool,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Force&nbsp;returning&nbsp;generated&nbsp;images&nbsp;even&nbsp;if&nbsp;save_img&nbsp;is&nbsp;true.&nbsp;Defaults&nbsp;to&nbsp;False.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;callback&nbsp;(callable,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;callback&nbsp;function&nbsp;to&nbsp;be&nbsp;called&nbsp;after&nbsp;each&nbsp;iteration.&nbsp;Defaults&nbsp;to&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;save_metadata&nbsp;(bool,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;to&nbsp;save&nbsp;metadata&nbsp;in&nbsp;the&nbsp;image&nbsp;EXIF.&nbsp;Defaults&nbsp;to&nbsp;False.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;List[Image.Image]:&nbsp;The&nbsp;generated&nbsp;images&nbsp;if&nbsp;`save_img`&nbsp;is&nbsp;False&nbsp;or&nbsp;`force_collect`&nbsp;is&nbsp;True.</tt></dd></dl>
+
+<dl><dt><a name="GenSession-get_last_conf"><strong>get_last_conf</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="GenSession-get_last_file_prefix"><strong>get_last_file_prefix</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="GenSession-save_last_conf"><strong>save_last_conf</strong></a>(self)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table>
+</body></html>
