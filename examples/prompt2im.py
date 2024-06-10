@@ -15,7 +15,7 @@ prompt = [["+", ["bioinformatics", "bio-tech"], "lab", "with",
           ["surrealism", "impressionism", "high tech", "cyberpunk"]]
 
 
-pipe = Prompt2ImPipe(model_dir+model_id)
+pipe = Prompt2ImPipe(model_dir+model_id, lpw=True)
 pipe.setup(width=768, height=768)
 gs = GenSession("./_projects/biolab", pipe, Cfgen(prompt, nprompt))
 gs.gen_sess(add_count=10)

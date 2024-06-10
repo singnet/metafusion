@@ -1,9 +1,32 @@
 from typing import Type
+from contextlib import nullcontext
+import torch
 import logging
 from diffusers import DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
+from diffusers.utils import is_accelerate_available
+if is_accelerate_available():
+    from accelerate import init_empty_weights
+else:
+    init_empty_weights = nullcontext
 
 
 logger = logging.getLogger(__file__)
+
+def copy_pipe(pipe):
+    copy = pipe.__class__(**pipe.components)
+    ctx = init_empty_weights if is_accelerate_available() else nullcontext
+    with ctx():
+        copy.unet = copy.unet.__class__.from_config(copy.unet.config)
+        copy.text_encoder = copy.text_encoder.__class__(pipe.text_encoder.config)
+        if hasattr(copy, 'text_encoder_2'):
+            copy.text_encoder_2 = copy.text_encoder_2.__class__(pipe.text_encoder_2.config)
+    # assign=True is needed since our copy is on "meta" device, i.g. weights are empty
+    copy.unet.load_state_dict(pipe.unet.state_dict(), assign=True)
+    copy.text_encoder.load_state_dict(pipe.text_encoder.state_dict(), assign=True)
+    if hasattr(copy, 'text_encoder_2'):
+        copy.text_encoder_2.load_state_dict(pipe.text_encoder_2.state_dict(), assign=True)
+    return copy
+
 
 class Loader:
     """
@@ -12,9 +35,11 @@ class Loader:
     def __init__(self):
         self._pipes = dict()
 
-    def load_pipeline(self, cls: Type[DiffusionPipeline], path, **additional_args):
+    def load_pipeline(self, cls: Type[DiffusionPipeline], path, torch_dtype=torch.float16, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            , **additional_args):
         for key, pipe in self._pipes.items():
             if key == path:
+                pipe = copy_pipe(pipe)
                 components = pipe.components
                 if issubclass(cls, StableDiffusionXLControlNetPipeline) or issubclass(cls, StableDiffusionControlNetPipeline):
                     # todo: keep controlnets in cache explicitly
@@ -27,13 +52,13 @@ class Loader:
                     components.pop('controlnet')
                 return cls(**components, **additional_args)
 
-
         if path.endswith('safetensors'):
             result = cls.from_single_file(path, **additional_args)
         else:
             result = cls.from_pretrained(path, **additional_args)
-
+        result = result.to(torch_dtype).to(device)
         self.register_pipeline(result, path)
+        result = copy_pipe(result)
         return result
 
     def register_pipeline(self, pipe: DiffusionPipeline, model_id):

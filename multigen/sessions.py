@@ -8,9 +8,22 @@ from .prompting import Cfgen
 class GenSession:
 
     def __init__(self, session_dir, pipe, config: Cfgen, name_prefix=""):
+        """
+        Initialize a GenSession instance.
+
+        Args:
+            session_dir (str):
+                The directory to store the session files.
+            pipe (Pipe):
+                The pipeline object for generating images.
+            config (Cfgen):
+                The configuration object for the generation process.
+            name_prefix (str, *optional*):
+                The prefix for the generated file names. Defaults to "".
+        """
         self.session_dir = session_dir
         self.pipe = pipe
-        self.model_id = pipe._model_id
+        self.model_id = pipe.model_id
         self.confg = config
         self.last_conf = None
         self.name_prefix = name_prefix
@@ -41,6 +54,26 @@ class GenSession:
     def gen_sess(self, add_count = 0, save_img=True,
                  drop_cfg=False, force_collect=False,
                  callback=None, save_metadata=False):
+        """
+        Run image generation session
+
+        Args:
+            add_count (int, *optional*):
+                The number of additional iterations to add. Defaults to 0.
+            save_img (bool, *optional*):
+                Whether to save the generated images on local filesystem. Defaults to True.
+            drop_cfg (bool, *optional*):
+                If true don't save configuration file for each image. Defaults to False.
+            force_collect (bool, *optional*):
+                Force returning generated images even if save_img is true. Defaults to False.
+            callback (callable, *optional*):
+                A callback function to be called after each iteration. Defaults to None.
+            save_metadata (bool, *optional*):
+                Whether to save metadata in the image EXIF. Defaults to False.
+
+        Returns:
+            List[Image.Image]: The generated images if `save_img` is False or `force_collect` is True.
+        """
         self.confg.max_count += add_count
         self.confg.start_count = self.confg.count
         self.last_img_name = None
@@ -55,8 +88,8 @@ class GenSession:
             self.last_index = self.confg.count - 1
             self.last_conf = {**inputs}
             # TODO: multiple inputs?
-            # inputs['generator'] = torch.Generator().manual_seed(inputs['generator'])
-            inputs['generator'] = torch.cuda.manual_seed(inputs['generator'])
+            inputs['generator'] = torch.Generator().manual_seed(inputs['generator'])
+
             image = self.pipe.gen(inputs)
             if save_img:
                 self.last_img_name = self.get_last_file_prefix() + ".png"

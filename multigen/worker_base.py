@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import Type
 import threading
@@ -6,11 +7,14 @@ import random
 import yaml
 from pathlib import Path
 import logging
-from .pipes import Prompt2ImPipe, MaskedIm2ImPipe, Cond2ImPipe
+from .pipes import Prompt2ImPipe, MaskedIm2ImPipe, Cond2ImPipe, Im2ImPipe
 from .loader import Loader
 
 
 class ServiceThreadBase(threading.Thread):
+    """
+    Base class implementing the worker thread for image generation
+    """
     def __init__(self, cfg_file):
         super().__init__(name='imgen', daemon=False)
         cfg_file = Path(cfg_file)
@@ -21,7 +25,9 @@ class ServiceThreadBase(threading.Thread):
             self.models = yaml.safe_load(f)
         if 'logging_folder' in self.config:
             logname = self.cwd / (self.config['logging_folder'] + datetime.today().strftime('%Y-%m-%d') + ".log")
-            logging.basicConfig(filename=logname)
+            if not os.path.exists(self.config['logging_folder']):
+                os.mkdir(self.config['logging_folder'])
+            logging.basicConfig(filename=logname, level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         self.sessions = {}
         self.queue = deque()
@@ -35,12 +41,31 @@ class ServiceThreadBase(threading.Thread):
             class_name = self.models['pipes'][p]['classname']
             self._pipe_name_to_pipe[p] = globals()[class_name]
         print(self._pipe_name_to_pipe)
+        self.logger.info('service is running')
 
     @property
     def pipes(self):
+        """
+        Get the list of available pipes.
+        """
         return self.models['pipes']
 
     def open_session(self, **args):
+        """
+        Open a new session for a user.
+
+        Parameters:
+           **args (dict): Keyword arguments containing the session details.
+               user (str): The username of the session owner.
+               model (str): The name of the model to use for the session, the one specified in config
+                   file under "base" field.
+               pipe: (str): The name of the pipe to use for the session, the one specified in models config
+                   file under "pipes" field.
+               project (str): The name of the project to generate images.
+
+        Returns:
+           dict: A dictionary containing the session ID(session_id) and an error message if applicable.
+        """
         user = args["user"]
         with self._lock:
             for s in self.sessions:
@@ -50,6 +75,9 @@ class ServiceThreadBase(threading.Thread):
                            }
             if args["model"] not in self.models['base']:
                 raise RuntimeError(f"Unknown model {args['model']}")
+            for lora in args.get('loras', []):
+                if lora not in self.models['lora']:
+                    raise RuntimeError(f"Unknown lora model {lora}")
             id = str(random.randint(0, 1024*1024*1024*4-1))
             self.sessions[id] = {**args}
             self.sessions[id]["images"] = []
