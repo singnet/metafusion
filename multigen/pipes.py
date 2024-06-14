@@ -61,7 +61,7 @@ class BasePipe:
 
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]]=None,
-                 pipe: Optional[DiffusionPipeline] = None, **args):
+                 pipe: Optional[DiffusionPipeline] = None, device=None, **args):
         """
         Constructor
 
@@ -76,7 +76,8 @@ class BasePipe:
             **args:
                 additional arguments passed to sd_pipe_class constructor
         """
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
@@ -113,8 +114,7 @@ class BasePipe:
                     self.pipe = sd_pipe_class.from_single_file(self.model_id, **args)
                 else:
                     self.pipe = sd_pipe_class.from_pretrained(self.model_id, **args)
-        if self.pipe.device != device:
-            self.pipe.to(device)
+        self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
         self.pipe.vae.enable_tiling()
