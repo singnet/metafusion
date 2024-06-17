@@ -40,7 +40,7 @@ class ServiceThreadBase(threading.Thread):
         for p in self.models['pipes']:
             class_name = self.models['pipes'][p]['classname']
             self._pipe_name_to_pipe[p] = globals()[class_name]
-        print(self._pipe_name_to_pipe)
+        self.logger.debug('pipe name to pipe %s', str(self._pipe_name_to_pipe))
         self.logger.info('service is running')
 
     @property
