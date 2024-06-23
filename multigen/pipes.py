@@ -506,10 +506,22 @@ class Cond2ImPipe(BasePipe):
     }
 
     cmodelsxl = {
+        "soft": "controlnet-softedge-sdxl",
+        "scribble": "controlnet-scribble-sdxl",
+        "canny": "controlnet-canny-sdxl",
+        "pose": "controlnet-openpose-sdxl",
+        "depth": "controlnet-depth-sdxl",
+        "inpaint": "controlnet-inpaint-sdxl",
         "qr": "controlnet-qr-pattern-sdxl",
     }
 
     cond_scales_defaults_xl = {
+        "pose": 1.0,
+        "soft": 0.95, #0.5
+        "canny": 0.75,
+        "scribble": 0.95,
+        "depth": 0.5,
+        "inpaint": 1.0,
         "qr": 0.5
     }
 
