@@ -22,6 +22,10 @@ from transformers import CLIPProcessor, CLIPTextModel
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 # from diffusers import StableDiffusionKDiffusionPipeline
 
+class ModelType(Enum):
+    SD = 1
+    SDXL = 2
+
 
 def get_diffusion_scheduler_names():
     """
@@ -61,7 +65,8 @@ class BasePipe:
 
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]]=None,
-                 pipe: Optional[DiffusionPipeline] = None, **args):
+                 pipe: Optional[DiffusionPipeline] = None,
+                 model_type: Optional[ModelType] = ModelType.SD, **args):
         """
         Constructor
 
@@ -73,6 +78,8 @@ class BasePipe:
             pipe (DiffusionPipeline, *optional*):
                 an instance of the pipeline to use,
                 if provided the model_id won't be used for loading.
+            model_type (ModelType, *optional*):
+                A flag to selected between SD or SDXL if neither sd_pipe_class nor pipe is given
             **args:
                 additional arguments passed to sd_pipe_class constructor
         """
@@ -96,13 +103,15 @@ class BasePipe:
 
             if sd_pipe_class is None:
                 if self.model_id.endswith('.safetensors'):
-                    try:
-                        self.pipe = StableDiffusionPipeline.from_single_file(self.model_id, **args)
-                    except TypeError as e:
-                        self.pipe = StableDiffusionXLPipeline.from_single_file(self.model_id, **args)
+                    if model_type == ModelType.SD:
+                        self.pipe = self._class.from_single_file(self.model_id, **args)
+                    else:
+                        self.pipe = self._classxl.from_single_file(self.model_id, **args)
                 else:
-                    # we can't use specific class, because we dont know if it is sdxl
-                    self.pipe = DiffusionPipeline.from_pretrained(self.model_id, **args)
+                    if model_type == ModelType.SD:
+                        self.pipe = self._class.from_pretrained(self.model_id, **args)
+                    else:
+                        self.pipe = self._classxl.from_pretrained(self.model_id, **args)
                 if 'custom_pipeline' not in args:
                     # create correct class if custom_pipeline is not specified
                     # at this stage we know that the model is sdxl or sd
@@ -476,11 +485,6 @@ class MaskedIm2ImPipe(Im2ImPipe):
         return img_compose
 
 
-class ControlnetType(Enum):
-    SD = 1
-    SDXL = 2
-
-
 class Cond2ImPipe(BasePipe):
     _class = StableDiffusionControlNetPipeline
     _classxl = StableDiffusionXLControlNetPipeline
@@ -522,7 +526,7 @@ class Cond2ImPipe(BasePipe):
     }
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=ControlnetType.SD, **args):
+                 ctypes=["soft"], **args):
         """
         Constructor
 
@@ -531,8 +535,6 @@ class Cond2ImPipe(BasePipe):
                 Path or identifier of the model to load.
             pipe (StableDiffusion(XL)ControlNetPipeline, *optional*):
                 An instance of the pipeline to use. If provided, `model_id` won't be used for loading.
-            model_type (ControlnetType, *optional*):
-                determines whether it's SD or SDXL model, defaults to ControlnetType.SD
             **args:
                 Additional arguments passed to the `BasePipe` constructor.
 
@@ -548,41 +550,32 @@ class Cond2ImPipe(BasePipe):
         dtype =  args.get('torch_type', dtype)
         cpath = self.get_cpath()
         cmodels = self.get_cmodels()
-        sd_class = self.get_sd_class()
         cnets = None
         if pipe is None:
             cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype) for c in ctypes]
-        super().__init__(model_id=model_id, pipe=pipe, sd_pipe_class=sd_class, controlnet=cnets, **args)
+
+        super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
 
     def get_cmodels(self):
-        if self.model_type == ControlnetType.SDXL:
+        if self.model_type == ModelType.SDXL:
             cmodels = self.cmodelsxl
-        elif self.model_type == ControlnetType.SD:
+        elif self.model_type == ModelType.SD:
             cmodels = self.cmodels
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cmodels
 
     def get_cpath(self):
-        if self.model_type == ControlnetType.SDXL:
+        if self.model_type == ModelType.SDXL:
             cpath = self.cpathxl
-        elif self.model_type == ControlnetType.SD:
+        elif self.model_type == ModelType.SD:
             cpath = self.cpath
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cpath
-
-    def get_sd_class(self):
-        if self.model_type == ControlnetType.SDXL:
-            cclass = self._classxl
-        elif self.model_type == ControlnetType.SD:
-            cclass = self._class
-        else:
-            raise ValueError(f"Unknown controlnet type: {self.model_type}")
-        return cclass
 
     def setup(self, fimage, width=None, height=None,
               image=None, cscales=None, guess_mode=False, **args):
@@ -621,9 +614,9 @@ class Cond2ImPipe(BasePipe):
         })
 
     def get_default_cond_scales(self):
-        if self.model_type == ControlnetType.SDXL:
+        if self.model_type == ModelType.SDXL:
             cond_scales = self.cond_scales_defaults_xl
-        elif self.model_type == ControlnetType.SD:
+        elif self.model_type == ModelType.SD:
             cond_scales = self.cond_scales_defaults
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
@@ -662,7 +655,7 @@ class CIm2ImPipe(Cond2ImPipe):
     The processing of the input image depends on the specified conditioning type(s).
     """
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=ControlnetType.SD, **args):
+                 ctypes=["soft"], **args):
 
         """
         Initialize the CIm2ImPipe.
@@ -675,8 +668,6 @@ class CIm2ImPipe(Cond2ImPipe):
             ctypes (list of str, optional):
                 The types of conditioning to apply to the input image. Defaults to ["soft"].
                 can be one of canny, pose, soft, soft-sobel, depth, None
-            model_type (ControlnetType, optional):
-                The type of ControlNet model to use(SD or SDXL). Defaults to ControlnetType.SD.
             **args:
                 Additional arguments passed to the Cond2ImPipe constructor.
         """
