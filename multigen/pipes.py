@@ -64,7 +64,7 @@ class BasePipe:
     _classxl = None
 
     def __init__(self, model_id: str,
-                 sd_pipe_class: Optional[Type[DiffusionPipeline]]=None,
+                 sd_pipe_class: Optional[Type[DiffusionPipeline]] = None,
                  pipe: Optional[DiffusionPipeline] = None,
                  model_type: Optional[ModelType] = ModelType.SD, **args):
         """
@@ -538,7 +538,7 @@ class Cond2ImPipe(BasePipe):
     }
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], **args):
+                 ctypes=["soft"], model_type=ModelType.SD, **args):
         """
         Constructor
 
@@ -566,7 +566,7 @@ class Cond2ImPipe(BasePipe):
         if pipe is None:
             cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype) for c in ctypes]
 
-        super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, **args)
+        super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
@@ -667,7 +667,7 @@ class CIm2ImPipe(Cond2ImPipe):
     The processing of the input image depends on the specified conditioning type(s).
     """
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], **args):
+                 ctypes=["soft"], model_type=ModelType.SD, **args):
 
         """
         Initialize the CIm2ImPipe.
