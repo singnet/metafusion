@@ -1,6 +1,6 @@
 from multigen.prompting import Cfgen
 from multigen.sessions import GenSession
-from multigen.pipes import Prompt2ImPipe
+from multigen.pipes import Prompt2ImPipe, ModelType
 from diffusers import DPMSolverMultistepScheduler
 
 
@@ -13,7 +13,7 @@ negative_prompt = "deformed, distorted, disfigured, poorly drawn, bad anatomy, w
 model_name = '~/models/SDXL/juggernautXL_v8Rundiffusion/'
 
 path_lora = 'checkpoint-20500'
-pipe = Prompt2ImPipe(model_name, lpw=True)
+pipe = Prompt2ImPipe(model_name, lpw=True, model_type=ModelType.SDXL)
 pipe.setup(width=1024, height=1024, guidance_scale=4, clip_skip=1)
 pipe.load_lora(path_lora, 0.9)
 

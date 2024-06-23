@@ -4,7 +4,7 @@ Example of using Hyper-SD with metafusion, see https://huggingface.co/ByteDance/
 
 from multigen.prompting import Cfgen
 from multigen.sessions import GenSession
-from multigen.pipes import Prompt2ImPipe
+from multigen.pipes import Prompt2ImPipe, ModelType
 
 model_dir = "./models-sd/"
 
@@ -20,7 +20,7 @@ nprompt = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers
 
 prompt = "Close-up portrait of a woman wearing suit posing with black background, rim lighting, octane, unreal"
 seed = 383947828373273
-pipe = Prompt2ImPipe(model_dir+model_id, lpw=False)
+pipe = Prompt2ImPipe(model_dir+model_id, lpw=False, model_type=ModelType.SDXL)
 
 # base SDXL and juggernautXL works with steps=5, guidance_scale=0
 pipe.setup(width=1024, height=1024, steps=10, timestep_spacing='trailing', guidance_scale=4, scheduler='EulerAncestralDiscreteScheduler')
