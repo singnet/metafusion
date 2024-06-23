@@ -4,7 +4,7 @@ import torch
 from .worker_base import ServiceThreadBase
 from .prompting import Cfgen
 from .sessions import GenSession
-from .pipes import Prompt2ImPipe, ControlnetType 
+from .pipes import Prompt2ImPipe, ModelType 
 
 
 class ServiceThread(ServiceThreadBase):
@@ -22,9 +22,9 @@ class ServiceThread(ServiceThreadBase):
             pipe = pipe_class(model_id, pipe=pipeline)
         else:
             pipeline = self._loader.get_pipeline(model_id)
-            cnet_type = ControlnetType.SD
+            cnet_type = ModelType.SD
             if xl:
-                cnet_type = ControlnetType.SDXL
+                cnet_type = ModelType.SDXL
             if pipeline is None or 'controlnet' not in pipeline.components:
                 pipe = pipe_class(model_id, ctypes=[cnet], model_type=cnet_type)
                 self._loader.register_pipeline(pipe.pipe, model_id)

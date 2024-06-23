@@ -42,7 +42,7 @@ depends on the conditioning type.
 
 ```
 model_id = 'runwayml/stable-diffusion-v1-5'
-pipe = CIm2ImPipe(model_id, model_type=ControlnetType.SD)
+pipe = CIm2ImPipe(model_id, model_type=ModelType.SD)
 pipe.setup("./bio1.png", strength=0.5, steps=25, ctypes=['soft'])
 img = pipe.gen({'prompt': 'biolab, anime style drawing, green colors'})
 img.save('bio2.png')
