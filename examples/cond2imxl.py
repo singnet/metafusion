@@ -1,6 +1,6 @@
 from multigen.prompting import Cfgen
 from multigen.sessions import GenSession
-from multigen.pipes import Cond2ImPipe, ControlnetType
+from multigen.pipes import Cond2ImPipe, ModelType
 
 
 nprompt = "monochrome, lowres, bad anatomy, worst quality, low quality"
@@ -16,7 +16,7 @@ model_id = "icbinpICantBelieveIts_v8.safetensors"
 model_id = "./stabilityai/stable-diffusion-xl-base-1.0"
 model_id = "./Stable-diffusion/sdXL_v10VAEFix.safetensors"
 
-pipe = Cond2ImPipe(model_dir + model_id, ctypes=["qr"], model_type=ControlnetType.SDXL)
+pipe = Cond2ImPipe(model_dir + model_id, ctypes=["qr"], model_type=ModelType.SDXL)
 pipe.setup("./spiral.png", width=768, height=512, cscales=[0.3])
 gs = GenSession("./_projects/cnet", pipe, Cfgen(prompt, nprompt))
 gs.gen_sess(add_count=5)

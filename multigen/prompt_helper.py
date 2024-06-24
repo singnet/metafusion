@@ -19,7 +19,7 @@ hints = {
     ],
     'quality': [
         ["ultra resolution",
-         "ultra high res"
+         "ultra high res",
          "highest resolution"],
         "hyperrealistic",
         "perfectly balanced",
