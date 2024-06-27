@@ -100,8 +100,6 @@ class BasePipe:
         if self.pipe is None:
             self.pipe = self._load_pipeline(sd_pipe_class, model_type, args)
         self._initialize_pipe(device)
-        if pipe is None:
-            assert isinstance(self.pipe, (self._class, self._classxl))
             
     def _initialize_pipe(self, device):
         if self.pipe.device != device:
@@ -564,7 +562,7 @@ class Cond2ImPipe(BasePipe):
         if pipe is None:
             if model_id.endswith('.safetensors'):
                 if self.model_type is None:
-                    RuntimeError(f"model type is not specified for safetensors file {model_id}")
+                    raise RuntimeError(f"model type is not specified for safetensors file {model_id}")
                 cpath = self.get_cpath()
                 cmodels = self.get_cmodels()
                 cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype) for c in ctypes]
