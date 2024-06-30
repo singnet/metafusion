@@ -10,6 +10,7 @@ import os
 import copy
 import numpy as np
 from typing import Optional, Type
+from diffusers import AutoPipelineForImage2Image, AutoPipelineForText2Image, AutoPipelineForInpainting
 from diffusers import DPMSolverMultistepScheduler
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DiffusionPipeline, StableDiffusionXLPipeline, StableDiffusionXLImg2ImgPipeline
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler, StableDiffusionXLControlNetPipeline
@@ -66,7 +67,7 @@ class BasePipe:
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]] = None,
                  pipe: Optional[DiffusionPipeline] = None,
-                 model_type: Optional[ModelType] = ModelType.SD, **args):
+                 model_type: Optional[ModelType] = None, **args):
         """
         Constructor
 
@@ -97,31 +98,10 @@ class BasePipe:
             else:
                 args['torch_dtype'] = torch.float16
         if self.pipe is None:
-            constructor_args = dict()
-            if isinstance(self, Cond2ImPipe):
-                constructor_args['controlnet'] = args['controlnet']
-
-            if sd_pipe_class is None:
-                if self.model_id.endswith('.safetensors'):
-                    if model_type == ModelType.SD:
-                        self.pipe = self._class.from_single_file(self.model_id, **args)
-                    else:
-                        self.pipe = self._classxl.from_single_file(self.model_id, **args)
-                else:
-                    if model_type == ModelType.SD:
-                        self.pipe = self._class.from_pretrained(self.model_id, **args)
-                    else:
-                        self.pipe = self._classxl.from_pretrained(self.model_id, **args)
-                if 'custom_pipeline' not in args:
-                    # create correct class if custom_pipeline is not specified
-                    # at this stage we know that the model is sdxl or sd
-                    self.pipe = self.from_pipe(self.pipe, **constructor_args)
-
-            else:
-                if self.model_id.endswith('.safetensors'):
-                    self.pipe = sd_pipe_class.from_single_file(self.model_id, **args)
-                else:
-                    self.pipe = sd_pipe_class.from_pretrained(self.model_id, **args)
+            self.pipe = self._load_pipeline(sd_pipe_class, model_type, args)
+        self._initialize_pipe(device)
+            
+    def _initialize_pipe(self, device):
         if self.pipe.device != device:
             self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
@@ -135,9 +115,20 @@ class BasePipe:
         except ImportError as e:
             logging.warning("xformers not found, can't use efficient attention")
 
-        if hasattr(self.pipe, 'text_encoder_2'):
-            if self.pipe.text_encoder_2 is None:
-                raise AttributeError("text_encoder_2 is None")
+    def _load_pipeline(self, sd_pipe_class, model_type, args):
+        if sd_pipe_class is None:
+            if self._model_id.endswith('.safetensors'):
+                if model_type is None:
+                    raise RuntimeError(f"model_type is not specified for safetensors file {self._model_id}")
+                pipe_class = self._class if model_type == ModelType.SD else self._classxl
+                return pipe_class.from_single_file(self._model_id, **args)
+            else:
+                return self._autopipeline.from_pretrained(self._model_id, **args)
+        else:
+            if self._model_id.endswith('.safetensors'):
+                return sd_pipe_class.from_single_file(self._model_id, **args)
+            else:
+                return sd_pipe_class.from_pretrained(self._model_id, **args)
 
     @property
     def scheduler(self):
@@ -226,14 +217,6 @@ class BasePipe:
         for lora in loras:
             self.load_lora(lora)
 
-    def from_pipe(self, pipe, **args):
-        if isinstance(pipe, StableDiffusionXLPipeline):
-            return self._classxl(**pipe.components, **args)
-        if isinstance(pipe, StableDiffusionPipeline):
-            return self._class(**pipe.components, **args)
-        # it's a custom pipeline
-        return pipe
-
 
 class Prompt2ImPipe(BasePipe):
     """
@@ -241,18 +224,21 @@ class Prompt2ImPipe(BasePipe):
     """
     _class = StableDiffusionPipeline
     _classxl = StableDiffusionXLPipeline
+    _autopipeline = AutoPipelineForText2Image
 
     def __init__(self, model_id: str,
                  pipe: Optional[StableDiffusionPipeline] = None,
                  lpw=False, **args):
-        if not lpw:
-            super().__init__(model_id=model_id, pipe=pipe, **args)
-        else:
-            #StableDiffusionKDiffusionPipeline
-            try:
-                super().__init__(model_id=model_id, pipe=pipe, custom_pipeline="lpw_stable_diffusion_xl", **args)
-            except AttributeError as e:
-                super().__init__(model_id=model_id, pipe=pipe, custom_pipeline="lpw_stable_diffusion", **args)
+        super().__init__(model_id=model_id, pipe=pipe, **args)
+        if lpw:
+            # convert to lpw
+            if isinstance(self.pipe, self._classxl):
+                self.pipe = DiffusionPipeline.from_pipe(self.pipe, custom_pipeline="lpw_stable_diffusion_xl")
+            elif isinstance(self.pipe, self._class):
+                self.pipe = DiffusionPipeline.from_pipe(self.pipe, custom_pipeline="lpw_stable_diffusion")
+            else:
+                raise RuntimeError(f"Unexpected model type {type(self.pipe)}")
+
 
     def setup(self, width=768, height=768, guidance_scale=7.5, **args) -> None:
         """
@@ -301,7 +287,7 @@ class Prompt2ImPipe(BasePipe):
 
 
 class Im2ImPipe(BasePipe):
-
+    _autopipeline = AutoPipelineForImage2Image
     _class = StableDiffusionImg2ImgPipeline
     _classxl = StableDiffusionXLImg2ImgPipeline
 
@@ -395,6 +381,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
 
     _class = MaskedStableDiffusionImg2ImgPipeline
     _classxl = MaskedStableDiffusionXLImg2ImgPipeline
+    _autopipeline = DiffusionPipeline
 
     def __init__(self, *args, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **kwargs):
         """
@@ -406,10 +393,21 @@ class MaskedIm2ImPipe(Im2ImPipe):
             **kwargs: Additional keyword arguments passed to Im2ImPipe constructor.
         """
         super().__init__(*args, pipe=pipe, **kwargs)
+        # convert loaded pipeline if necessary
+        if not isinstance(self.pipe, (self._class, self._classxl)):
+            self.pipe = self._from_pipe(self.pipe, **kwargs)
         self._mask = None
         self._image_painted = None
         self._original_image = None
         self._mask_blur = None
+
+    def _from_pipe(self, pipe, **args):
+        cls = pipe.__class__
+        if 'StableDiffusionXLPipeline' in str(cls) :
+            return self._classxl(**pipe.components, **args)
+        elif 'StableDiffusionPipeline' in str(cls):
+            return self._class(**pipe.components, **args)
+        raise RuntimeError(f"can't load pipeline from type {cls}")
 
     def setup(self, original_image=None, image_painted=None, mask=None, blur=4,
               blur_compose=4, sample_mode='sample', scale=None, **kwargs):
@@ -488,6 +486,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
 class Cond2ImPipe(BasePipe):
     _class = StableDiffusionControlNetPipeline
     _classxl = StableDiffusionXLControlNetPipeline
+    _autopipeline = DiffusionPipeline
 
     # TODO: set path
     cpath = "./models-cn/"
@@ -538,7 +537,7 @@ class Cond2ImPipe(BasePipe):
     }
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=ModelType.SD, **args):
+                 ctypes=["soft"], model_type=None, **args):
         """
         Constructor
 
@@ -560,13 +559,35 @@ class Cond2ImPipe(BasePipe):
         if torch.cuda.is_available():
             dtype = torch.float16
         dtype =  args.get('torch_type', dtype)
-        cpath = self.get_cpath()
-        cmodels = self.get_cmodels()
-        cnets = None
         if pipe is None:
-            cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype) for c in ctypes]
-
-        super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
+            if model_id.endswith('.safetensors'):
+                if self.model_type is None:
+                    raise RuntimeError(f"model type is not specified for safetensors file {model_id}")
+                cpath = self.get_cpath()
+                cmodels = self.get_cmodels()
+                cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype) for c in ctypes]
+                super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
+            else:
+                cnets = []
+                super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
+                # determine model type from pipe
+                if isinstance(self.pipe, (self._classxl, StableDiffusionXLPipeline)):
+                    t_model_type = ModelType.SDXL
+                elif isinstance(self.pipe, (self._class, StableDiffusionPipeline)):
+                    t_model_type = ModelType.SD
+                else:
+                    raise RuntimeError(f"Unexpected model type {type(self.pipe)}")
+                self.model_type = t_model_type
+                cpath = self.get_cpath()
+                cmodels = self.get_cmodels()
+                cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype).to(self.pipe.device) for c in ctypes]
+                if self.model_type == ModelType.SDXL:
+                    self.pipe = self._classxl.from_pipe(self.pipe, controlnet=cnets)
+                else:
+                    self.pipe = self._class.from_pipe(self.pipe, controlnet=cnets)
+        else:
+            # don't load anything, just reuse pipe
+            super().__init__(model_id=model_id, pipe=pipe, **args)
         # FIXME: do we need to setup this specific scheduler here?
         #        should we pass its name in setup to super?
         self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
@@ -751,6 +772,7 @@ class InpaintingPipe(BasePipe):
 
     _class = StableDiffusionControlNetInpaintPipeline
     _classxl = StableDiffusionXLControlNetInpaintPipeline
+    _autopipeline = AutoPipelineForInpainting
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
                  **args):
