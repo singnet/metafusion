@@ -6,6 +6,7 @@ import torch
 import numpy
 
 from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
+from multigen.pipes import ModelType
 from dummy import DummyDiffusionPipeline
 
 
@@ -32,10 +33,13 @@ class MyTestCase(TestCase):
     def get_ref_image(self):
         return "cube_planet_dms.png"
 
+    def model_type(self):
+        return ModelType.SDXL if 'TestSDXL' in str(self.__class__) else ModelType.SD
+
     def test_basic_txt2im(self):
         model = self.get_model()
         # create pipe
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline)
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline, model_type=self.model_type())
         pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
         seed = 49045438434843
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
@@ -63,7 +67,7 @@ class MyTestCase(TestCase):
                   ["green colors", "dream colors", "neon glowing"],
                   ["8k RAW photo, masterpiece, super quality", "artwork", "unity 3D"],
                   ["surrealism", "impressionism", "high tech", "cyberpunk"]]
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline)
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline, model_type=self.model_type())
         pipe.setup(width=512, height=512, scheduler="DPMSolverMultistepScheduler", steps=5)
         # remove directory if it exists
         dirname = "./gen_batch"
@@ -106,7 +110,7 @@ class MyTestCase(TestCase):
                          "unets are different")
 
     def test_img2img_basic(self):
-        pipe = Im2ImPipe(self.get_model())
+        pipe = Im2ImPipe(self.get_model(), model_type=self.model_type())
         im = self.get_ref_image()
         pipe.setup(im, strength=0.7, steps=5)
         result = pipe.gen(dict(prompt="cube planet cartoon style"))

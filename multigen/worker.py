@@ -7,7 +7,7 @@ from queue import Empty
 from .worker_base import ServiceThreadBase
 from .prompting import Cfgen
 from .sessions import GenSession
-from .pipes import Prompt2ImPipe, ControlnetType 
+from .pipes import Prompt2ImPipe, ModelType 
 
 
 class ServiceThread(ServiceThreadBase):
@@ -62,9 +62,10 @@ class ServiceThread(ServiceThreadBase):
         else:
             # out pipeline uses controlnet
             pipeline = self._loader.get_pipeline(model_id, device=device)
-            cnet_type = ControlnetType.SD
+            cnet_type = ModelType.SD
+
             if xl:
-                cnet_type = ControlnetType.SDXL
+                cnet_type = ModelType.SDXL
             if pipeline is None or 'controlnet' not in pipeline.components:
                 # reload
                 pipe = pipe_class(model_id, ctypes=[cnet], model_type=cnet_type, device=device)
