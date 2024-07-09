@@ -1,9 +1,14 @@
 from typing import Type, List
+import random
 import copy
 from contextlib import nullcontext
 import torch
 import logging
 import threading
+import psutil
+import sys
+import diffusers
+
 from diffusers import DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionXLControlNetPipeline
 from diffusers.utils import is_accelerate_available
 if is_accelerate_available():
@@ -60,14 +65,14 @@ class Loader:
             if device is None:
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             if device.type == 'cuda':
-                idx = device.index 
+                idx = device.index
                 gpu_pipes = self._gpu_pipes.get(idx, [])
                 for (key, value) in gpu_pipes:
                     if key == path:
                         logger.debug(f'found pipe in gpu cache {key}')
                         result = self.from_pipe(cls, value, additional_args)
                         logger.debug(f'created pipe from gpu cache {key} on {device}')
-                        return result 
+                        return result
             for (key, pipe) in self._cpu_pipes.items():
                 if key == path:
                     logger.debug(f'found pipe in cpu cache {key}')
@@ -87,7 +92,7 @@ class Loader:
             assert result.device == device
             logger.debug(f'returning {type(result)} from {path} on {result.device}')
             return result
-    
+
     def from_pipe(self, cls, pipe, additional_args):
         pipe = copy_pipe(pipe)
         components = pipe.components
@@ -106,7 +111,12 @@ class Loader:
         with self._lock:
             device = pipe.device
             if model_id not in self._cpu_pipes:
-            # deepcopy is needed since Module.to is an inplace operation
+                # deepcopy is needed since Module.to is an inplace operation
+                size = get_model_size(pipe)
+                ram = awailable_ram()
+                if ram < size * 3:
+                    key_to_delete = random.choice(list(self._cpu_pipes.keys()))
+                    self._cpu_pipes.pop(key_to_delete)
                 self._cpu_pipes[model_id] = copy.deepcopy(pipe.to('cpu'))
             pipe.to(device)
             if pipe.device.type == 'cuda':
@@ -117,10 +127,10 @@ class Loader:
         logger.debug(f'clear_cache pipelines from {device}')
         with self._lock:
             if device.type == 'cuda':
-                self._gpu_pipes[device.index] = [] 
+                self._gpu_pipes[device.index] = []
 
     def _store_gpu_pipe(self, pipe, model_id):
-        idx = pipe.device.index 
+        idx = pipe.device.index
         # for now just clear all other pipelines
         self._gpu_pipes[idx] = [(model_id, pipe)]
 
@@ -142,3 +152,35 @@ class Loader:
                     return pipe
 
             return None
+
+
+def count_params(model):
+    total_size = sum(param.numel() for param in model.parameters())
+    mul = 2
+    if model.dtype == torch.float16:
+        mul = 2
+    elif model.dtype == torch.float32:
+        mul = 4
+    return total_size * mul
+
+
+def get_size(obj):
+    return sys.getsizeof(obj)
+
+
+def get_model_size(pipeline):
+    total_size = 0
+    for name, component in pipeline.components.items():
+        if isinstance(component, torch.nn.Module):
+            total_size += count_params(component)
+        elif hasattr(component, 'tokenizer'):
+            total_size += count_params(component.tokenizer)
+        else:
+            total_size += get_size(component)
+    return total_size / (1024 * 1024)
+
+
+def awailable_ram():
+    mem = psutil.virtual_memory()
+    available_ram = mem.available
+    return available_ram / (1024 * 1024)
