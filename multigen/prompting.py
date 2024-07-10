@@ -1,4 +1,7 @@
 import random
+from threading import local
+
+thread_data = local()
 
 def _concat_kw(kw_desc, delim=' '):
     prompt = ''
@@ -16,9 +19,9 @@ def _get_one_kw_rec(kw_desc):
     if isinstance(kw_desc, list):
         if kw_desc[0] == '+':
             return _concat_kw(kw_desc[1:])
-        return _get_one_kw_rec(kw_desc[random.randint(0, len(kw_desc)-1)])
+        return _get_one_kw_rec(kw_desc[thread_data.random.randint(0, len(kw_desc)-1)])
     if isinstance(kw_desc, dict):
-        if random.random() < kw_desc['p']:
+        if thread_data.random.random() < kw_desc['p']:
             return _get_one_kw_rec(kw_desc['w'])
         else:
             return None
@@ -53,13 +56,13 @@ class Cfgen:
            (self.max_count == 0 and nseeds == 0):
             raise StopIteration
         seed = self.seeds[self.count % nseeds] if nseeds > 0 else \
-               random.randint(1, 1024*1024*1024*4-1)
+               thread_data.random.randint(1, 1024*1024*1024*4-1)
         self.count += 1
 
+        thread_data.random = random.Random()
+        thread_data.random.seed(seed)
         result = {'prompt': get_prompt(self.prompt),
                 'generator': seed,
                 'negative_prompt': get_prompt(self.negative_prompt)}
         result.update(self.inputs)
         return result
-
-
