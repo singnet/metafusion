@@ -67,7 +67,7 @@ class BasePipe:
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]] = None,
                  pipe: Optional[DiffusionPipeline] = None,
-                 model_type: Optional[ModelType] = None, **args):
+                 model_type: Optional[ModelType] = None, lpw=False, **args):
         """
         Constructor
 
@@ -81,6 +81,8 @@ class BasePipe:
                 if provided the model_id won't be used for loading.
             model_type (ModelType, *optional*):
                 A flag to selected between SD or SDXL if neither sd_pipe_class nor pipe is given
+            lpw (bool, *optional*):
+                A flag to enable of disable long-prompt weighting
             **args:
                 additional arguments passed to sd_pipe_class constructor
         """
@@ -89,6 +91,7 @@ class BasePipe:
         self._scheduler = None
         self._hypernets = []
         self._model_id = os.path.expanduser(model_id)
+        self.model_type = model_type
         self.pipe_params = dict()
         # Creating a stable diffusion pipeine
         args = {**args}
@@ -100,7 +103,23 @@ class BasePipe:
         if self.pipe is None:
             self.pipe = self._load_pipeline(sd_pipe_class, model_type, args)
         self._initialize_pipe(device)
-            
+        self.lpw = lpw
+        if self.model_type is None:
+            self.model_type = self._get_model_type()
+
+    def _get_model_type(self):
+        module = self.pipe.__class__.__module__
+        if isinstance(self.pipe, self._classxl):
+            return ModelType.SDXL
+        elif isinstance(self.pipe, self._class):
+            return ModelType.SD
+        elif module.startswith('diffusers.pipelines.stable_diffusion_xl.'):
+            return ModelType.SDXL
+        elif module.startswith('diffusers.pipelines.stable_diffusion.'):
+            return ModelType.SD
+        else:
+            raise RuntimeError("unsuported model type {self.pipe.__class__}")
+
     def _initialize_pipe(self, device):
         if self.pipe.device != device:
             self.pipe.to(device)
@@ -217,6 +236,56 @@ class BasePipe:
         for lora in loras:
             self.load_lora(lora)
 
+    def get_prompt_embeds(self, prompt, negative_prompt, clip_skip: Optional[int] = None):
+        if self.lpw:
+            # convert to lpw
+            if isinstance(self.pipe, self._classxl):
+                from . import lpw_stable_diffusion_xl
+                negative_prompt = negative_prompt if negative_prompt is not None else ""
+
+                return lpw_stable_diffusion_xl.get_weighted_text_embeddings_sdxl(
+                    pipe=self.pipe,
+                    prompt=prompt,
+                    neg_prompt=negative_prompt,
+                    num_images_per_prompt=1,
+                    clip_skip=clip_skip,
+                )
+            elif isinstance(self.pipe, self._class):
+                raise RuntimeError(f"Unexpected model type {type(self.pipe)}")
+
+    def prepare_inputs(self, inputs):
+        kwargs = self.pipe_params.copy()
+        kwargs.update(inputs)
+        if self.lpw:
+            if self.model_type == ModelType.SDXL:
+                if 'negative_prompt' not in kwargs:
+                    kwargs['negative_prompt'] = None
+                if 'clip_skip' not in kwargs:
+                    kwargs['clip_skip'] = None
+                # we can override pipe parameters
+                # so we update kwargs with inputs after pipe_params
+                kwargs.update(inputs)
+                (
+                    prompt_embeds,
+                    negative_prompt_embeds,
+                    pooled_prompt_embeds,
+                    negative_pooled_prompt_embeds,
+                ) = self.get_prompt_embeds(kwargs.pop('prompt'), kwargs.pop('negative_prompt'), kwargs.pop('clip_skip'))
+
+                kwargs['prompt_embeds'] = prompt_embeds
+                kwargs['negative_prompt_embeds'] = negative_prompt_embeds
+                kwargs['pooled_prompt_embeds'] = pooled_prompt_embeds
+                kwargs['negative_pooled_prompt_embeds'] = negative_pooled_prompt_embeds
+            elif self.model_type == ModelType.SD:
+                if 'clip_skip' in kwargs:
+                    # not supported
+                    kwargs.pop('clip_skip')
+            else:
+                raise RuntimeError(f"unexpected model type is used with lpw {self.model_type}")
+        # allow for scheduler overwrite
+        self.try_set_scheduler(inputs)
+        return kwargs
+
 
 class Prompt2ImPipe(BasePipe):
     """
@@ -228,17 +297,8 @@ class Prompt2ImPipe(BasePipe):
 
     def __init__(self, model_id: str,
                  pipe: Optional[StableDiffusionPipeline] = None,
-                 lpw=False, **args):
+                 **args):
         super().__init__(model_id=model_id, pipe=pipe, **args)
-        if lpw:
-            # convert to lpw
-            if isinstance(self.pipe, self._classxl):
-                self.pipe = DiffusionPipeline.from_pipe(self.pipe, custom_pipeline="lpw_stable_diffusion_xl")
-            elif isinstance(self.pipe, self._class):
-                self.pipe = DiffusionPipeline.from_pipe(self.pipe, custom_pipeline="lpw_stable_diffusion")
-            else:
-                raise RuntimeError(f"Unexpected model type {type(self.pipe)}")
-
 
     def setup(self, width=768, height=768, guidance_scale=7.5, **args) -> None:
         """
@@ -273,15 +333,7 @@ class Prompt2ImPipe(BasePipe):
             image (Pil.Image.Image):
                 generated image
         """
-        kwargs = self.pipe_params.copy()
-        # we can override pipe parameters
-        # so we update kwargs with inputs after pipe_params
-        kwargs.update(inputs)
-        # allow for scheduler overwrite
-        self.try_set_scheduler(inputs)
-        if 'clip_skip' in kwargs and 'StableDiffusionLongPromptWeightingPipeline' in str(type(self.pipe)):
-            # not supported
-            kwargs.pop('clip_skip')
+        kwargs = self.prepare_inputs(inputs)
         image = self.pipe(**kwargs).images[0]
         return image
 
@@ -346,6 +398,7 @@ class Im2ImPipe(BasePipe):
         cfg.update({
             "source_image": self.fname,
         })
+        cfg['lpw'] = self.lpw
         cfg.update(self.pipe_params)
         return cfg
 
@@ -359,7 +412,7 @@ class Im2ImPipe(BasePipe):
         Returns:
             Pil.Image.Image: Generated image.
         """
-        kwargs = self.pipe_params.copy()
+        kwargs = self.prepare_inputs(inputs)
         # we can override pipe parameters
         # so we update kwargs with inputs after pipe_params
         kwargs.update({"image": self._input_image})
@@ -466,7 +519,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
         return np.tile(mask_blur / mask_blur.max(), (3, 1, 1)).transpose(1,2,0)
 
     def gen(self, inputs):
-        inputs = inputs.copy()
+        inputs = self.prepare_inputs(inputs)
         inputs.update(mask=self._mask)
         if 'sample_mode' not in inputs:
             inputs['sample_mode'] = self._sample_mode
@@ -674,7 +727,7 @@ class Cond2ImPipe(BasePipe):
         Returns:
             PIL.Image.Image: The generated image.
         """
-        inputs = {**inputs}
+        inputs = self.prepare_inputs(inputs)
         inputs.update(self.pipe_params)
         inputs.update({"image": self._condition_image})
         image = self.pipe(**inputs).images[0]
@@ -839,8 +892,7 @@ class InpaintingPipe(BasePipe):
             PIL.Image:
                 The generated inpainted image.
         """
-
-        inputs = {**inputs}
+        inputs = self.prepare_inputs(inputs)
         inputs.update(self.pipe_params)
         inputs.update({
             "image": self._init_image,
