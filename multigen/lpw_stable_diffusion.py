@@ -205,7 +205,6 @@ def get_unweighted_text_embeddings(
     When the length of tokens is a multiple of the capacity of the text encoder,
     it should be split into chunks and sent to the text encoder individually.
     """
-    
     max_embeddings_multiples = (text_input.shape[1] - 2) // (chunk_length - 2)
     if max_embeddings_multiples > 1:
         text_embeddings = []
@@ -217,12 +216,11 @@ def get_unweighted_text_embeddings(
             text_input_chunk[:, 0] = text_input[0, 0]
             text_input_chunk[:, -1] = text_input[0, -1]
             if clip_skip is None:
-                prompt_embeds = pipe.text_encoder(text_input_chunk.to(device))
-                prompt_embeds = prompt_embeds[0]
+                prompt_embeds = pipe.text_encoder(text_input_chunk.to(pipe.device))
+                text_embedding = prompt_embeds[0]
             else:
                 prompt_embeds = pipe.text_encoder(
-                    text_input_chunk.to(device), attention_mask=attention_mask, output_hidden_states=True
-                )
+                    text_input_chunk.to(pipe.device), output_hidden_states=True)
                 # Access the `hidden_states` first, that contains a tuple of
                 # all the hidden states from the encoder layers. Then index into
                 # the tuple to access the hidden states from the desired layer.
@@ -231,7 +229,7 @@ def get_unweighted_text_embeddings(
                 # representations. The `last_hidden_states` that we typically use for
                 # obtaining the final prompt representations passes through the LayerNorm
                 # layer.
-                prompt_embeds = pipe.text_encoder.text_model.final_layer_norm(prompt_embeds)
+                text_embedding = pipe.text_encoder.text_model.final_layer_norm(prompt_embeds)
 
             if no_boseos_middle:
                 if i == 0:
@@ -247,7 +245,10 @@ def get_unweighted_text_embeddings(
             text_embeddings.append(text_embedding)
         text_embeddings = torch.concat(text_embeddings, axis=1)
     else:
-        text_embeddings = pipe.text_encoder(text_input)[0]
+        if clip_skip is None:
+            clip_skip = 0
+        prompt_embeds = pipe.text_encoder(text_input, output_hidden_states=True)[-1][-(clip_skip + 1)]
+        text_embeddings = pipe.text_encoder.text_model.final_layer_norm(prompt_embeds)
     return text_embeddings
 
 
