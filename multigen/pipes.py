@@ -67,7 +67,7 @@ class BasePipe:
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]] = None,
                  pipe: Optional[DiffusionPipeline] = None,
-                 model_type: Optional[ModelType] = None, lpw=False, **args):
+                 model_type: Optional[ModelType] = None, device=None, lpw=False, **args):
         """
         Constructor
 
@@ -86,7 +86,8 @@ class BasePipe:
             **args:
                 additional arguments passed to sd_pipe_class constructor
         """
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
@@ -125,8 +126,9 @@ class BasePipe:
             raise RuntimeError("unsuported model type {self.pipe.__class__}")
 
     def _initialize_pipe(self, device):
-        if self.pipe.device != device:
-            self.pipe.to(device)
+        # sometimes text encoder is on a different device
+        # if self.pipe.device != device:
+        self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
         self.pipe.vae.enable_tiling()

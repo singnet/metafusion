@@ -6,3 +6,4 @@ opencv_python>=4.6.0.66
 Pillow
 torch
 transformers
+psutil
