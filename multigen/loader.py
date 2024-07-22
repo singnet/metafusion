@@ -63,7 +63,7 @@ class Loader:
             logger.debug(f'looking for pipeline {cls} from {path} on {device}')
             result = None
             if device is None:
-                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu', 0)
             if device.type == 'cuda':
                 idx = device.index
                 gpu_pipes = self._gpu_pipes.get(idx, [])
@@ -89,7 +89,9 @@ class Loader:
             result = result.to(dtype=torch_dtype, device=device)
             self.cache_pipeline(result, path)
             result = copy_pipe(result)
-            assert result.device == device
+            assert result.device.type == device.type
+            if device.type == 'cuda':
+                assert result.device.index == device.index
             logger.debug(f'returning {type(result)} from {path} on {result.device}')
             return result
 
@@ -131,6 +133,7 @@ class Loader:
 
     def _store_gpu_pipe(self, pipe, model_id):
         idx = pipe.device.index
+        assert idx is not None
         # for now just clear all other pipelines
         self._gpu_pipes[idx] = [(model_id, pipe)]
 

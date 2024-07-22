@@ -105,6 +105,7 @@ class BasePipe:
             self.pipe = self._load_pipeline(sd_pipe_class, model_type, args)
         self._initialize_pipe(device)
         self.lpw = lpw
+        self._loras = []
         mt = self._get_model_type()
         if self.model_type is None:
             self.model_type = mt
@@ -183,6 +184,7 @@ class BasePipe:
         if 'cross_attention_kwargs' not in self.pipe_params:
             self.pipe_params['cross_attention_kwargs'] = {}
         self.pipe_params['cross_attention_kwargs']["scale"] = multiplier
+        self._loras.append(path)
 
     def add_hypernet(self, path, multiplier=None):
         from . hypernet import add_hypernet, Hypernetwork
@@ -209,6 +211,7 @@ class BasePipe:
         cfg.update({"model_id": self.model_id })
         cfg['scheduler'] = dict(self.pipe.scheduler.config)
         cfg['scheduler']['class_name'] = self.pipe.scheduler.__class__.__name__
+        cfg['loras'] = self._loras
         cfg.update(self.pipe_params)
         return cfg
 
@@ -230,7 +233,7 @@ class BasePipe:
                 Sample Steps are Flawed](https://huggingface.co/papers/2305.08891) for more information.
             :return: None
         """
-        self.pipe_params = { 'num_inference_steps': steps }
+        self.pipe_params.update({ 'num_inference_steps': steps })
         assert clip_skip >= 0
         assert clip_skip <= 10
         self.pipe_params['clip_skip'] = clip_skip
@@ -242,7 +245,7 @@ class BasePipe:
         for lora in loras:
             self.load_lora(lora)
 
-    def get_prompt_embeds(self, prompt, negative_prompt, clip_skip: Optional[int] = None):
+    def get_prompt_embeds(self, prompt, negative_prompt, clip_skip: Optional[int] = None, lora_scale: Optional[int] = None):
         if self.lpw:
             # convert to lpw
             if isinstance(self.pipe, self._classxl):
@@ -255,6 +258,7 @@ class BasePipe:
                     neg_prompt=negative_prompt,
                     num_images_per_prompt=1,
                     clip_skip=clip_skip,
+                    lora_scale=lora_scale
                 )
             elif isinstance(self.pipe, self._class):
                 from . import lpw_stable_diffusion
@@ -264,12 +268,14 @@ class BasePipe:
                     uncond_prompt=negative_prompt,
                     max_embeddings_multiples=3,
                     clip_skip=clip_skip,
+                    lora_scale=lora_scale
                 )
 
     def prepare_inputs(self, inputs):
         kwargs = self.pipe_params.copy()
         kwargs.update(inputs)
         if self.lpw:
+            lora_scale = kwargs.get('cross_attention_kwargs', dict()).get("scale", None)
             if self.model_type == ModelType.SDXL:
                 if 'negative_prompt' not in kwargs:
                     kwargs['negative_prompt'] = None
@@ -283,7 +289,7 @@ class BasePipe:
                     negative_prompt_embeds,
                     pooled_prompt_embeds,
                     negative_pooled_prompt_embeds,
-                ) = self.get_prompt_embeds(kwargs.pop('prompt'), kwargs.pop('negative_prompt'), kwargs.pop('clip_skip'))
+                ) = self.get_prompt_embeds(kwargs.pop('prompt'), kwargs.pop('negative_prompt'), kwargs.pop('clip_skip'), lora_scale=lora_scale)
 
                 kwargs['prompt_embeds'] = prompt_embeds
                 kwargs['negative_prompt_embeds'] = negative_prompt_embeds
@@ -294,7 +300,7 @@ class BasePipe:
                     prompt=kwargs.pop('prompt'),
                     negative_prompt=kwargs.pop('negative_prompt'),
                     clip_skip=kwargs.pop('clip_skip'),
-                )
+                    lora_scale=lora_scale)
                 kwargs['prompt_embeds'] = prompt_embeds
                 kwargs['negative_prompt_embeds'] = negative_prompt_embeds
             else:
