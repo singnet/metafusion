@@ -22,12 +22,21 @@ class TestCase(unittest.TestCase):
 
 
 
+def can_run_lpw():
+    if os.environ.get('METAFUSION_MODELS_DIR'):
+        return True
+    return False
+
+
 class MyTestCase(TestCase):
 
     def setUp(self):
         self._pipeline = None
 
     def get_model(self):
+        models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
+        if models_dir is not None:
+            return models_dir + '/icb_diffusers'
         return "hf-internal-testing/tiny-stable-diffusion-torch"
 
     def get_ref_image(self):
@@ -116,6 +125,7 @@ class MyTestCase(TestCase):
         result = pipe.gen(dict(prompt="cube planet cartoon style"))
         result.save('test_img2img_basic.png')
 
+    @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
     def test_lpw(self):
         """
         Check that last part of long prompt affect the generation
@@ -138,6 +148,7 @@ class MyTestCase(TestCase):
         # check that difference is large
         self.assertGreater(diff, 1000)
 
+    @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
     def test_lpw_turned_off(self):
         """
         Check that last part of long prompt don't affect the generation with lpw turned off
@@ -164,6 +175,9 @@ class MyTestCase(TestCase):
 class TestSDXL(MyTestCase):
 
     def get_model(self):
+        models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
+        if models_dir is not None:
+            return models_dir + '/SDXL/stable-diffusion-xl-base-1.0'
         return "hf-internal-testing/tiny-stable-diffusion-xl-pipe"
 
 
