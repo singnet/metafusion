@@ -22,12 +22,21 @@ class TestCase(unittest.TestCase):
 
 
 
+def can_run_lpw():
+    if os.environ.get('METAFUSION_MODELS_DIR'):
+        return True
+    return False
+
+
 class MyTestCase(TestCase):
 
     def setUp(self):
         self._pipeline = None
 
     def get_model(self):
+        models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
+        if models_dir is not None:
+            return models_dir + '/icb_diffusers'
         return "hf-internal-testing/tiny-stable-diffusion-torch"
 
     def get_ref_image(self):
@@ -116,11 +125,59 @@ class MyTestCase(TestCase):
         result = pipe.gen(dict(prompt="cube planet cartoon style"))
         result.save('test_img2img_basic.png')
 
+    @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
+    def test_lpw(self):
+        """
+        Check that last part of long prompt affect the generation
+        """
+        pipe = Prompt2ImPipe(self.get_model(), model_type=self.model_type(), lpw=True)
+        prompt = ' a cubic planet with atmoshere as seen from low orbit, each side of the cubic planet is ocuppied by an ocean, oceans have islands, but no continents, atmoshere of the planet has usual sperical shape, corners of the cube are above the atmoshere, but edges largely are covered by the atomosphere, there are cyclones in the atmoshere, the photo is made from low-orbit, famous sci-fi illustration'
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
+        seed = 49045438434843
+        params = dict(prompt=prompt,
+                      negative_prompt="spherical",
+                      generator=torch.cuda.manual_seed(seed))
+        image = pipe.gen(params)
+        image.save("cube_test_lpw.png")
+        params = dict(prompt=prompt + " , best quality, famous photo",
+                negative_prompt="spherical",
+                generator=torch.cuda.manual_seed(seed))
+        image1 = pipe.gen(params)
+        image.save("cube_test_lpw1.png")
+        diff = self.compute_diff(image1, image)
+        # check that difference is large
+        self.assertGreater(diff, 1000)
+
+    @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
+    def test_lpw_turned_off(self):
+        """
+        Check that last part of long prompt don't affect the generation with lpw turned off
+        """
+        pipe = Prompt2ImPipe(self.get_model(), model_type=self.model_type(), lpw=False)
+        prompt = ' a cubic planet with atmoshere as seen from low orbit, each side of the cubic planet is ocuppied by an ocean, oceans have islands, but no continents, atmoshere of the planet has usual sperical shape, corners of the cube are above the atmoshere, but edges largely are covered by the atomosphere, there are cyclones in the atmoshere, the photo is made from low-orbit, famous sci-fi illustration'
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
+        seed = 49045438434843
+        params = dict(prompt=prompt,
+                      negative_prompt="spherical",
+                      generator=torch.cuda.manual_seed(seed))
+        image = pipe.gen(params)
+        image.save("cube_test_no_lpw.png")
+        params = dict(prompt=prompt + " , best quality, famous photo",
+                negative_prompt="spherical",
+                generator=torch.cuda.manual_seed(seed))
+        image1 = pipe.gen(params)
+        image.save("cube_test_no_lpw1.png")
+        diff = self.compute_diff(image1, image)
+        # check that difference is large
+        self.assertLess(diff, 1)
 
 
 class TestSDXL(MyTestCase):
 
     def get_model(self):
+        models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
+        if models_dir is not None:
+            return models_dir + '/SDXL/stable-diffusion-xl-base-1.0'
         return "hf-internal-testing/tiny-stable-diffusion-xl-pipe"
 
 

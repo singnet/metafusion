@@ -22,7 +22,7 @@ from transformers import (
 
 from diffusers import DiffusionPipeline, StableDiffusionXLPipeline
 from diffusers.image_processor import PipelineImageInput, VaeImageProcessor
-from diffusers.loaders import FromSingleFileMixin, IPAdapterMixin, LoraLoaderMixin, TextualInversionLoaderMixin
+from diffusers.loaders import StableDiffusionXLLoraLoaderMixin, FromSingleFileMixin, IPAdapterMixin, LoraLoaderMixin, TextualInversionLoaderMixin
 from diffusers.models import AutoencoderKL, ImageProjection, UNet2DConditionModel
 from diffusers.models.attention_processor import AttnProcessor2_0, XFormersAttnProcessor
 from diffusers.pipelines.pipeline_utils import StableDiffusionMixin
@@ -37,7 +37,14 @@ from diffusers.utils import (
     replace_example_docstring,
 )
 from diffusers.utils.torch_utils import randn_tensor
-
+from diffusers.utils import (
+    USE_PEFT_BACKEND,
+    deprecate,
+    logging,
+    replace_example_docstring,
+    scale_lora_layers,
+    unscale_lora_layers,
+)
 
 if is_invisible_watermark_available():
     from diffusers.pipelines.stable_diffusion_xl.watermark import StableDiffusionXLWatermarker
@@ -256,6 +263,7 @@ def get_weighted_text_embeddings_sdxl(
     num_images_per_prompt: int = 1,
     device: Optional[torch.device] = None,
     clip_skip: Optional[int] = None,
+    lora_scale: Optional[int] = None
 ):
     """
     This function can process long prompt with weights, no length limitation
@@ -275,6 +283,24 @@ def get_weighted_text_embeddings_sdxl(
         neg_prompt_embeds (torch.Tensor)
     """
     device = device or pipe._execution_device
+
+    # set lora scale so that monkey patched LoRA
+    # function of text encoder can correctly access it
+    if lora_scale is not None and isinstance(pipe, StableDiffusionXLLoraLoaderMixin):
+        pipe._lora_scale = lora_scale
+
+        # dynamically adjust the LoRA scale
+        if pipe.text_encoder is not None:
+            if not USE_PEFT_BACKEND:
+                adjust_lora_scale_text_encoder(pipe.text_encoder, lora_scale)
+            else:
+                scale_lora_layers(pipe.text_encoder, lora_scale)
+
+        if pipe.text_encoder_2 is not None:
+            if not USE_PEFT_BACKEND:
+                adjust_lora_scale_text_encoder(pipe.text_encoder_2, lora_scale)
+            else:
+                scale_lora_layers(pipe.text_encoder_2, lora_scale)
 
     if prompt_2:
         prompt = f"{prompt} {prompt_2}"
@@ -423,6 +449,16 @@ def get_weighted_text_embeddings_sdxl(
     negative_pooled_prompt_embeds = negative_pooled_prompt_embeds.repeat(1, num_images_per_prompt, 1).view(
         bs_embed * num_images_per_prompt, -1
     )
+
+    if pipe.text_encoder is not None:
+        if isinstance(pipe, StableDiffusionXLLoraLoaderMixin) and USE_PEFT_BACKEND:
+            # Retrieve the original scale by scaling back the LoRA layers
+            unscale_lora_layers(pipe.text_encoder, lora_scale)
+
+    if pipe.text_encoder_2 is not None:
+        if isinstance(pipe, StableDiffusionXLLoraLoaderMixin) and USE_PEFT_BACKEND:
+            # Retrieve the original scale by scaling back the LoRA layers
+            unscale_lora_layers(pipe.text_encoder_2, lora_scale)
 
     return prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds
 

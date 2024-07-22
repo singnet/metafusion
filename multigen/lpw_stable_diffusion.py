@@ -22,6 +22,14 @@ from diffusers.utils import (
     logging,
 )
 from diffusers.utils.torch_utils import randn_tensor
+from diffusers.utils import (
+    USE_PEFT_BACKEND,
+    deprecate,
+    logging,
+    replace_example_docstring,
+    scale_lora_layers,
+    unscale_lora_layers,
+)
 
 
 # ------------------------------------------------------------------------------
@@ -261,6 +269,7 @@ def get_weighted_text_embeddings(
     skip_parsing: Optional[bool] = False,
     skip_weighting: Optional[bool] = False,
     clip_skip=None,
+    lora_scale=None,
 ):
     r"""
     Prompts can be assigned with local weights using brackets. For example,
@@ -287,6 +296,16 @@ def get_weighted_text_embeddings(
         skip_weighting (`bool`, *optional*, defaults to `False`):
             Skip the weighting. When the parsing is skipped, it is forced True.
     """
+    # set lora scale so that monkey patched LoRA
+    # function of text encoder can correctly access it
+    if lora_scale is not None and isinstance(pipe, LoraLoaderMixin):
+        pipe._lora_scale = lora_scale
+
+        # dynamically adjust the LoRA scale
+        if not USE_PEFT_BACKEND:
+            adjust_lora_scale_text_encoder(pipe.text_encoder, lora_scale)
+        else:
+            scale_lora_layers(pipe.text_encoder, lora_scale)
     max_length = (pipe.tokenizer.model_max_length - 2) * max_embeddings_multiples + 2
     if isinstance(prompt, str):
         prompt = [prompt]
@@ -382,6 +401,11 @@ def get_weighted_text_embeddings(
             uncond_embeddings *= uncond_weights.unsqueeze(-1)
             current_mean = uncond_embeddings.float().mean(axis=[-2, -1]).to(uncond_embeddings.dtype)
             uncond_embeddings *= (previous_mean / current_mean).unsqueeze(-1).unsqueeze(-1)
+
+    if pipe.text_encoder is not None:
+        if isinstance(pipe, LoraLoaderMixin) and USE_PEFT_BACKEND:
+            # Retrieve the original scale by scaling back the LoRA layers
+            unscale_lora_layers(pipe.text_encoder, lora_scale)
 
     if uncond_prompt is not None:
         return text_embeddings, uncond_embeddings

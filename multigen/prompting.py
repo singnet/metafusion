@@ -57,10 +57,9 @@ class Cfgen:
             raise StopIteration
         thread_data.random = random.Random()
         seed = self.seeds[self.count % nseeds] if nseeds > 0 else \
-               thread_data.random.randint(1, 1024*1024*1024*4-1)
-        self.count += 1
-
+                    random.randint(1, 1024*1024*1024*4-1)
         thread_data.random.seed(seed)
+        self.count += 1
         result = {'prompt': get_prompt(self.prompt),
                 'generator': seed,
                 'negative_prompt': get_prompt(self.negative_prompt)}
