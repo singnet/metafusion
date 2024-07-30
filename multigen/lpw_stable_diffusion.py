@@ -11,25 +11,21 @@ from transformers import CLIPImageProcessor, CLIPTextModel, CLIPTokenizer
 from diffusers import DiffusionPipeline
 from diffusers.configuration_utils import FrozenDict
 from diffusers.image_processor import VaeImageProcessor
-from diffusers.loaders import FromSingleFileMixin, LoraLoaderMixin, TextualInversionLoaderMixin
+from diffusers.loaders import FromSingleFileMixin, StableDiffusionLoraLoaderMixin, TextualInversionLoaderMixin
 from diffusers.models import AutoencoderKL, UNet2DConditionModel
+from diffusers.models.lora import adjust_lora_scale_text_encoder
 from diffusers.pipelines.pipeline_utils import StableDiffusionMixin
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput, StableDiffusionSafetyChecker
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers.utils import (
     PIL_INTERPOLATION,
-    deprecate,
-    logging,
-)
-from diffusers.utils.torch_utils import randn_tensor
-from diffusers.utils import (
     USE_PEFT_BACKEND,
     deprecate,
     logging,
-    replace_example_docstring,
     scale_lora_layers,
     unscale_lora_layers,
 )
+from diffusers.utils.torch_utils import randn_tensor
 
 
 # ------------------------------------------------------------------------------
@@ -227,8 +223,7 @@ def get_unweighted_text_embeddings(
                 prompt_embeds = pipe.text_encoder(text_input_chunk.to(pipe.device))
                 text_embedding = prompt_embeds[0]
             else:
-                prompt_embeds = pipe.text_encoder(
-                    text_input_chunk.to(pipe.device), output_hidden_states=True)
+                prompt_embeds = pipe.text_encoder(text_input_chunk.to(pipe.device), output_hidden_states=True)
                 # Access the `hidden_states` first, that contains a tuple of
                 # all the hidden states from the encoder layers. Then index into
                 # the tuple to access the hidden states from the desired layer.
@@ -298,7 +293,7 @@ def get_weighted_text_embeddings(
     """
     # set lora scale so that monkey patched LoRA
     # function of text encoder can correctly access it
-    if lora_scale is not None and isinstance(pipe, LoraLoaderMixin):
+    if lora_scale is not None and isinstance(pipe, StableDiffusionLoraLoaderMixin):
         pipe._lora_scale = lora_scale
 
         # dynamically adjust the LoRA scale
@@ -372,11 +367,7 @@ def get_weighted_text_embeddings(
 
     # get the embeddings
     text_embeddings = get_unweighted_text_embeddings(
-        pipe,
-        prompt_tokens,
-        pipe.tokenizer.model_max_length,
-        no_boseos_middle=no_boseos_middle,
-        clip_skip=clip_skip
+        pipe, prompt_tokens, pipe.tokenizer.model_max_length, no_boseos_middle=no_boseos_middle, clip_skip=clip_skip
     )
     prompt_weights = torch.tensor(prompt_weights, dtype=text_embeddings.dtype, device=text_embeddings.device)
     if uncond_prompt is not None:
@@ -385,7 +376,7 @@ def get_weighted_text_embeddings(
             uncond_tokens,
             pipe.tokenizer.model_max_length,
             no_boseos_middle=no_boseos_middle,
-            clip_skip=clip_skip
+            clip_skip=clip_skip,
         )
         uncond_weights = torch.tensor(uncond_weights, dtype=uncond_embeddings.dtype, device=uncond_embeddings.device)
 
@@ -403,7 +394,7 @@ def get_weighted_text_embeddings(
             uncond_embeddings *= (previous_mean / current_mean).unsqueeze(-1).unsqueeze(-1)
 
     if pipe.text_encoder is not None:
-        if isinstance(pipe, LoraLoaderMixin) and USE_PEFT_BACKEND:
+        if isinstance(pipe, StableDiffusionLoraLoaderMixin) and USE_PEFT_BACKEND:
             # Retrieve the original scale by scaling back the LoRA layers
             unscale_lora_layers(pipe.text_encoder, lora_scale)
 
@@ -454,7 +445,11 @@ def preprocess_mask(mask, batch_size, scale_factor=8):
 
 
 class StableDiffusionLongPromptWeightingPipeline(
-    DiffusionPipeline, StableDiffusionMixin, TextualInversionLoaderMixin, LoraLoaderMixin, FromSingleFileMixin
+    DiffusionPipeline,
+    StableDiffusionMixin,
+    TextualInversionLoaderMixin,
+    StableDiffusionLoraLoaderMixin,
+    FromSingleFileMixin,
 ):
     r"""
     Pipeline for text-to-image generation using Stable Diffusion without tokens length limit, and support parsing
@@ -590,6 +585,8 @@ class StableDiffusionLongPromptWeightingPipeline(
         max_embeddings_multiples=3,
         prompt_embeds: Optional[torch.Tensor] = None,
         negative_prompt_embeds: Optional[torch.Tensor] = None,
+        clip_skip: Optional[int] = None,
+        lora_scale: Optional[float] = None,
     ):
         r"""
         Encodes the prompt into text encoder hidden states.
@@ -639,6 +636,7 @@ class StableDiffusionLongPromptWeightingPipeline(
                 uncond_prompt=negative_prompt if do_classifier_free_guidance else None,
                 max_embeddings_multiples=max_embeddings_multiples,
                 clip_skip=clip_skip,
+                lora_scale=lora_scale,
             )
             if prompt_embeds is None:
                 prompt_embeds = prompt_embeds1
@@ -832,6 +830,7 @@ class StableDiffusionLongPromptWeightingPipeline(
         return_dict: bool = True,
         callback: Optional[Callable[[int, int, torch.Tensor], None]] = None,
         is_cancelled_callback: Optional[Callable[[], bool]] = None,
+        clip_skip: Optional[int] = None,
         callback_steps: int = 1,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
     ):
@@ -907,6 +906,9 @@ class StableDiffusionLongPromptWeightingPipeline(
             is_cancelled_callback (`Callable`, *optional*):
                 A function that will be called every `callback_steps` steps during inference. If the function returns
                 `True`, the inference will be cancelled.
+            clip_skip (`int`, *optional*):
+                Number of layers to be skipped from CLIP while computing the prompt embeddings. A value of 1 means that
+                the output of the pre-final layer will be used for computing the prompt embeddings.
             callback_steps (`int`, *optional*, defaults to 1):
                 The frequency at which the `callback` function will be called. If not specified, the callback will be
                 called at every step.
@@ -945,6 +947,7 @@ class StableDiffusionLongPromptWeightingPipeline(
         # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
         # corresponds to doing no classifier free guidance.
         do_classifier_free_guidance = guidance_scale > 1.0
+        lora_scale = cross_attention_kwargs.get("scale", None) if cross_attention_kwargs is not None else None
 
         # 3. Encode input prompt
         prompt_embeds = self._encode_prompt(
@@ -956,6 +959,8 @@ class StableDiffusionLongPromptWeightingPipeline(
             max_embeddings_multiples,
             prompt_embeds=prompt_embeds,
             negative_prompt_embeds=negative_prompt_embeds,
+            clip_skip=clip_skip,
+            lora_scale=lora_scale,
         )
         dtype = prompt_embeds.dtype
 
@@ -1086,6 +1091,7 @@ class StableDiffusionLongPromptWeightingPipeline(
         return_dict: bool = True,
         callback: Optional[Callable[[int, int, torch.Tensor], None]] = None,
         is_cancelled_callback: Optional[Callable[[], bool]] = None,
+        clip_skip=None,
         callback_steps: int = 1,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
     ):
@@ -1143,6 +1149,9 @@ class StableDiffusionLongPromptWeightingPipeline(
             is_cancelled_callback (`Callable`, *optional*):
                 A function that will be called every `callback_steps` steps during inference. If the function returns
                 `True`, the inference will be cancelled.
+            clip_skip (`int`, *optional*):
+                Number of layers to be skipped from CLIP while computing the prompt embeddings. A value of 1 means that
+                the output of the pre-final layer will be used for computing the prompt embeddings.
             callback_steps (`int`, *optional*, defaults to 1):
                 The frequency at which the `callback` function will be called. If not specified, the callback will be
                 called at every step.
@@ -1177,6 +1186,7 @@ class StableDiffusionLongPromptWeightingPipeline(
             return_dict=return_dict,
             callback=callback,
             is_cancelled_callback=is_cancelled_callback,
+            clip_skip=clip_skip,
             callback_steps=callback_steps,
             cross_attention_kwargs=cross_attention_kwargs,
         )
