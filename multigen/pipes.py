@@ -718,7 +718,6 @@ class Cond2ImPipe(BasePipe):
             "height": image.size[1] if height is None else height,
             "controlnet_conditioning_scale": cscales,
             "guess_mode": guess_mode,
-            "num_inference_steps": 20
         })
 
     def get_default_cond_scales(self):
