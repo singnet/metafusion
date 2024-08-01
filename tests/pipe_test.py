@@ -121,9 +121,49 @@ class MyTestCase(TestCase):
     def test_img2img_basic(self):
         pipe = Im2ImPipe(self.get_model(), model_type=self.model_type())
         im = self.get_ref_image()
-        pipe.setup(im, strength=0.7, steps=5)
-        result = pipe.gen(dict(prompt="cube planet cartoon style"))
-        result.save('test_img2img_basic.png')
+        seed = 49045438434843
+        pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
+        self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
+        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image.save('test_img2img_basic.png')
+        pipe.setup(im, strength=0.7, steps=5, guidance_scale=7.6)
+        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        diff = self.compute_diff(image1, image)
+        # check that difference is large
+        self.assertGreater(diff, 1000)
+        pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
+        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        diff = self.compute_diff(image2, image)
+        # check that difference is small
+        self.assertLess(diff, 1)
+
+    def test_maskedimg2img_basic(self):
+        pipe = MaskedIm2ImPipe(self.get_model(), model_type=self.model_type())
+        img = PIL.Image.open("./mech_beard_sigm.png")
+        # read image with mask painted over
+        img_paint = numpy.array(PIL.Image.open("./mech_beard_sigm_mask.png"))
+
+        scheduler = "EulerAncestralDiscreteScheduler"
+        seed = 49045438434843
+        blur = 48
+        param_3_3 = dict(original_image=img, image_painted=img_paint, strength=0.96,
+               scheduler=scheduler, clip_skip=0, blur=blur, blur_compose=3, steps=5, guidance_scale=3.3)
+        param_7_6 = dict(original_image=img, image_painted=img_paint, strength=0.96,
+               scheduler=scheduler, clip_skip=0, blur=blur, blur_compose=3, steps=5, guidance_scale=7.6)
+        pipe.setup(**param_3_3)
+        self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
+        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image.save('test_img2img_basic.png')
+        pipe.setup(**param_7_6)
+        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        diff = self.compute_diff(image1, image)
+        # check that difference is large
+        self.assertGreater(diff, 1000)
+        pipe.setup(**param_3_3)
+        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        diff = self.compute_diff(image2, image)
+        # check that difference is small
+        self.assertLess(diff, 1)
 
     @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
     def test_lpw(self):
