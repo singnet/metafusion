@@ -493,12 +493,12 @@ class MaskedIm2ImPipe(Im2ImPipe):
            original_image (str or Image.Image, *optional*):
                 The original image. Defaults to None.
            image_painted (str or Image.Image, *optional*):
-                The painted image. Defaults to None.
+                modified version of original_image, this parameter should be skipped if mask is passed. Defaults to None.
            mask (array-like or Image.Image, *optional*):
-               The mask. Defaults to None. If None tt will be computed from the difference
+               The mask. Defaults to None. If None it will be computed from the difference
                between original_image and image_painted
            blur (int, *optional*):
-                The blur radius for the mask. Defaults to 4.
+                The blur radius for the mask to apply for generation process. Defaults to 4.
            blur_compose (int, *optional*):
                 The blur radius for composing the original and generated images. Defaults to 4.
            sample_mode (str, *optional*):
