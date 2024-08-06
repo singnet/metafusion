@@ -30,7 +30,7 @@
     
 <tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl>
-<dt><font face="helvetica, arial"><a href="diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl_img2img.html#StableDiffusionXLImg2ImgPipeline">diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl_img2img.StableDiffusionXLImg2ImgPipeline</a>(<a href="diffusers.pipelines.pipeline_utils.html#DiffusionPipeline">diffusers.pipelines.pipeline_utils.DiffusionPipeline</a>, <a href="diffusers.pipelines.pipeline_utils.html#StableDiffusionMixin">diffusers.pipelines.pipeline_utils.StableDiffusionMixin</a>, <a href="diffusers.loaders.textual_inversion.html#TextualInversionLoaderMixin">diffusers.loaders.textual_inversion.TextualInversionLoaderMixin</a>, <a href="diffusers.loaders.single_file.html#FromSingleFileMixin">diffusers.loaders.single_file.FromSingleFileMixin</a>, <a href="diffusers.loaders.lora.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora.StableDiffusionXLLoraLoaderMixin</a>, <a href="diffusers.loaders.ip_adapter.html#IPAdapterMixin">diffusers.loaders.ip_adapter.IPAdapterMixin</a>)
+<dt><font face="helvetica, arial"><a href="diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl_img2img.html#StableDiffusionXLImg2ImgPipeline">diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl_img2img.StableDiffusionXLImg2ImgPipeline</a>(<a href="diffusers.pipelines.pipeline_utils.html#DiffusionPipeline">diffusers.pipelines.pipeline_utils.DiffusionPipeline</a>, <a href="diffusers.pipelines.pipeline_utils.html#StableDiffusionMixin">diffusers.pipelines.pipeline_utils.StableDiffusionMixin</a>, <a href="diffusers.loaders.textual_inversion.html#TextualInversionLoaderMixin">diffusers.loaders.textual_inversion.TextualInversionLoaderMixin</a>, <a href="diffusers.loaders.single_file.html#FromSingleFileMixin">diffusers.loaders.single_file.FromSingleFileMixin</a>, <a href="diffusers.loaders.lora_pipeline.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora_pipeline.StableDiffusionXLLoraLoaderMixin</a>, <a href="diffusers.loaders.ip_adapter.html#IPAdapterMixin">diffusers.loaders.ip_adapter.IPAdapterMixin</a>)
 </font></dt><dd>
 <dl>
 <dt><font face="helvetica, arial"><a href="multigen.pipelines.masked_stable_diffusion_xl_img2img.html#MaskedStableDiffusionXLImg2ImgPipeline">MaskedStableDiffusionXLImg2ImgPipeline</a>
@@ -57,14 +57,14 @@
 <dd><a href="diffusers.pipelines.pipeline_utils.html#StableDiffusionMixin">diffusers.pipelines.pipeline_utils.StableDiffusionMixin</a></dd>
 <dd><a href="diffusers.loaders.textual_inversion.html#TextualInversionLoaderMixin">diffusers.loaders.textual_inversion.TextualInversionLoaderMixin</a></dd>
 <dd><a href="diffusers.loaders.single_file.html#FromSingleFileMixin">diffusers.loaders.single_file.FromSingleFileMixin</a></dd>
-<dd><a href="diffusers.loaders.lora.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora.StableDiffusionXLLoraLoaderMixin</a></dd>
-<dd><a href="diffusers.loaders.lora.html#LoraLoaderMixin">diffusers.loaders.lora.LoraLoaderMixin</a></dd>
+<dd><a href="diffusers.loaders.lora_pipeline.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora_pipeline.StableDiffusionXLLoraLoaderMixin</a></dd>
+<dd><a href="diffusers.loaders.lora_base.html#LoraBaseMixin">diffusers.loaders.lora_base.LoraBaseMixin</a></dd>
 <dd><a href="diffusers.loaders.ip_adapter.html#IPAdapterMixin">diffusers.loaders.ip_adapter.IPAdapterMixin</a></dd>
 <dd><a href="builtins.html#object">builtins.object</a></dd>
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-__call__"><strong>__call__</strong></a>(self, prompt: Union[str, List[str]] = None, prompt_2: Union[str, List[str], NoneType] = None, image: Union[PIL.Image.Image, numpy.ndarray, torch.FloatTensor, List[PIL.Image.Image], List[numpy.ndarray], List[torch.FloatTensor]] = None, original_image: Union[PIL.Image.Image, numpy.ndarray, torch.FloatTensor, List[PIL.Image.Image], List[numpy.ndarray], List[torch.FloatTensor]] = None, strength: float = 0.3, num_inference_steps: Optional[int] = 50, timesteps: List[int] = None, denoising_start: Optional[float] = None, denoising_end: Optional[float] = None, guidance_scale: Optional[float] = 5.0, negative_prompt: Union[str, List[str], NoneType] = None, negative_prompt_2: Union[str, List[str], NoneType] = None, num_images_per_prompt: Optional[int] = 1, eta: Optional[float] = 0.0, generator: Union[torch._C.Generator, List[torch._C.Generator], NoneType] = None, latents: Optional[torch.FloatTensor] = None, prompt_embeds: Optional[torch.FloatTensor] = None, negative_prompt_embeds: Optional[torch.FloatTensor] = None, pooled_prompt_embeds: Optional[torch.FloatTensor] = None, negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None, ip_adapter_image: Union[PIL.Image.Image, numpy.ndarray, torch.FloatTensor, List[PIL.Image.Image], List[numpy.ndarray], List[torch.FloatTensor], NoneType] = None, ip_adapter_image_embeds: Optional[List[torch.FloatTensor]] = None, output_type: Optional[str] = 'pil', return_dict: bool = True, cross_attention_kwargs: Optional[Dict[str, Any]] = None, guidance_rescale: float = 0.0, original_size: Tuple[int, int] = None, crops_coords_top_left: Tuple[int, int] = (0, 0), target_size: Tuple[int, int] = None, negative_original_size: Optional[Tuple[int, int]] = None, negative_crops_coords_top_left: Tuple[int, int] = (0, 0), negative_target_size: Optional[Tuple[int, int]] = None, aesthetic_score: float = 6.0, negative_aesthetic_score: float = 2.5, clip_skip: Optional[int] = None, callback_on_step_end: Optional[Callable[[int, int, Dict], NoneType]] = None, callback_on_step_end_tensor_inputs: List[str] = ['latents'], mask: Union[torch.FloatTensor, PIL.Image.Image, numpy.ndarray, List[torch.FloatTensor], List[PIL.Image.Image], List[numpy.ndarray]] = None, sample_mode='sample', **kwargs)</dt><dd><tt>The&nbsp;call&nbsp;function&nbsp;to&nbsp;the&nbsp;pipeline&nbsp;for&nbsp;generation.<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-__call__"><strong>__call__</strong></a>(self, prompt: Union[str, List[str]] = None, prompt_2: Union[str, List[str], NoneType] = None, image: Union[PIL.Image.Image, numpy.ndarray, torch.Tensor, List[PIL.Image.Image], List[numpy.ndarray], List[torch.Tensor]] = None, original_image: Union[PIL.Image.Image, numpy.ndarray, torch.Tensor, List[PIL.Image.Image], List[numpy.ndarray], List[torch.Tensor]] = None, strength: float = 0.3, num_inference_steps: Optional[int] = 50, timesteps: List[int] = None, denoising_start: Optional[float] = None, denoising_end: Optional[float] = None, guidance_scale: Optional[float] = 5.0, negative_prompt: Union[str, List[str], NoneType] = None, negative_prompt_2: Union[str, List[str], NoneType] = None, num_images_per_prompt: Optional[int] = 1, eta: Optional[float] = 0.0, generator: Union[torch._C.Generator, List[torch._C.Generator], NoneType] = None, latents: Optional[torch.FloatTensor] = None, prompt_embeds: Optional[torch.FloatTensor] = None, negative_prompt_embeds: Optional[torch.FloatTensor] = None, pooled_prompt_embeds: Optional[torch.FloatTensor] = None, negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None, ip_adapter_image: Union[PIL.Image.Image, numpy.ndarray, torch.Tensor, List[PIL.Image.Image], List[numpy.ndarray], List[torch.Tensor], NoneType] = None, ip_adapter_image_embeds: Optional[List[torch.FloatTensor]] = None, output_type: Optional[str] = 'pil', return_dict: bool = True, cross_attention_kwargs: Optional[Dict[str, Any]] = None, guidance_rescale: float = 0.0, original_size: Tuple[int, int] = None, crops_coords_top_left: Tuple[int, int] = (0, 0), target_size: Tuple[int, int] = None, negative_original_size: Optional[Tuple[int, int]] = None, negative_crops_coords_top_left: Tuple[int, int] = (0, 0), negative_target_size: Optional[Tuple[int, int]] = None, aesthetic_score: float = 6.0, negative_aesthetic_score: float = 2.5, clip_skip: Optional[int] = None, callback_on_step_end: Optional[Callable[[int, int, Dict], NoneType]] = None, callback_on_step_end_tensor_inputs: List[str] = ['latents'], mask: Union[torch.FloatTensor, PIL.Image.Image, numpy.ndarray, List[torch.FloatTensor], List[PIL.Image.Image], List[numpy.ndarray]] = None, sample_mode='sample', **kwargs)</dt><dd><tt>The&nbsp;call&nbsp;function&nbsp;to&nbsp;the&nbsp;pipeline&nbsp;for&nbsp;generation.<br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;prompt&nbsp;(`str`&nbsp;or&nbsp;`List[str]`,&nbsp;*optional*):<br>
@@ -148,7 +148,7 @@ Methods inherited from <a href="diffusers.pipelines.stable_diffusion_xl.pipeline
 
 <dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-encode_image"><strong>encode_image</strong></a>(self, image, device, num_images_per_prompt, output_hidden_states=None)</dt><dd><tt>#&nbsp;Copied&nbsp;from&nbsp;diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.encode_image</tt></dd></dl>
 
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-encode_prompt"><strong>encode_prompt</strong></a>(self, prompt: str, prompt_2: Optional[str] = None, device: Optional[torch.device] = None, num_images_per_prompt: int = 1, do_classifier_free_guidance: bool = True, negative_prompt: Optional[str] = None, negative_prompt_2: Optional[str] = None, prompt_embeds: Optional[torch.FloatTensor] = None, negative_prompt_embeds: Optional[torch.FloatTensor] = None, pooled_prompt_embeds: Optional[torch.FloatTensor] = None, negative_pooled_prompt_embeds: Optional[torch.FloatTensor] = None, lora_scale: Optional[float] = None, clip_skip: Optional[int] = None)</dt><dd><tt>Encodes&nbsp;the&nbsp;prompt&nbsp;into&nbsp;text&nbsp;encoder&nbsp;hidden&nbsp;states.<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-encode_prompt"><strong>encode_prompt</strong></a>(self, prompt: str, prompt_2: Optional[str] = None, device: Optional[torch.device] = None, num_images_per_prompt: int = 1, do_classifier_free_guidance: bool = True, negative_prompt: Optional[str] = None, negative_prompt_2: Optional[str] = None, prompt_embeds: Optional[torch.Tensor] = None, negative_prompt_embeds: Optional[torch.Tensor] = None, pooled_prompt_embeds: Optional[torch.Tensor] = None, negative_pooled_prompt_embeds: Optional[torch.Tensor] = None, lora_scale: Optional[float] = None, clip_skip: Optional[int] = None)</dt><dd><tt>Encodes&nbsp;the&nbsp;prompt&nbsp;into&nbsp;text&nbsp;encoder&nbsp;hidden&nbsp;states.<br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;prompt&nbsp;(`str`&nbsp;or&nbsp;`List[str]`,&nbsp;*optional*):<br>
@@ -169,17 +169,17 @@ Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;negative_prompt_2&nbsp;(`str`&nbsp;or&nbsp;`List[str]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;prompt&nbsp;or&nbsp;prompts&nbsp;not&nbsp;to&nbsp;guide&nbsp;the&nbsp;image&nbsp;generation&nbsp;to&nbsp;be&nbsp;sent&nbsp;to&nbsp;`tokenizer_2`&nbsp;and<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`text_encoder_2`.&nbsp;If&nbsp;not&nbsp;defined,&nbsp;`negative_prompt`&nbsp;is&nbsp;used&nbsp;in&nbsp;both&nbsp;text-encoders<br>
-&nbsp;&nbsp;&nbsp;&nbsp;prompt_embeds&nbsp;(`torch.FloatTensor`,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;prompt_embeds&nbsp;(`torch.Tensor`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pre-generated&nbsp;text&nbsp;embeddings.&nbsp;Can&nbsp;be&nbsp;used&nbsp;to&nbsp;easily&nbsp;tweak&nbsp;text&nbsp;inputs,&nbsp;*e.g.*&nbsp;prompt&nbsp;weighting.&nbsp;If&nbsp;not<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;provided,&nbsp;text&nbsp;embeddings&nbsp;will&nbsp;be&nbsp;generated&nbsp;from&nbsp;`prompt`&nbsp;input&nbsp;argument.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;negative_prompt_embeds&nbsp;(`torch.FloatTensor`,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;negative_prompt_embeds&nbsp;(`torch.Tensor`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pre-generated&nbsp;negative&nbsp;text&nbsp;embeddings.&nbsp;Can&nbsp;be&nbsp;used&nbsp;to&nbsp;easily&nbsp;tweak&nbsp;text&nbsp;inputs,&nbsp;*e.g.*&nbsp;prompt<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;weighting.&nbsp;If&nbsp;not&nbsp;provided,&nbsp;negative_prompt_embeds&nbsp;will&nbsp;be&nbsp;generated&nbsp;from&nbsp;`negative_prompt`&nbsp;input<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;argument.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;pooled_prompt_embeds&nbsp;(`torch.FloatTensor`,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pooled_prompt_embeds&nbsp;(`torch.Tensor`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pre-generated&nbsp;pooled&nbsp;text&nbsp;embeddings.&nbsp;Can&nbsp;be&nbsp;used&nbsp;to&nbsp;easily&nbsp;tweak&nbsp;text&nbsp;inputs,&nbsp;*e.g.*&nbsp;prompt&nbsp;weighting.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If&nbsp;not&nbsp;provided,&nbsp;pooled&nbsp;text&nbsp;embeddings&nbsp;will&nbsp;be&nbsp;generated&nbsp;from&nbsp;`prompt`&nbsp;input&nbsp;argument.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;negative_pooled_prompt_embeds&nbsp;(`torch.FloatTensor`,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;negative_pooled_prompt_embeds&nbsp;(`torch.Tensor`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pre-generated&nbsp;negative&nbsp;pooled&nbsp;text&nbsp;embeddings.&nbsp;Can&nbsp;be&nbsp;used&nbsp;to&nbsp;easily&nbsp;tweak&nbsp;text&nbsp;inputs,&nbsp;*e.g.*&nbsp;prompt<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;weighting.&nbsp;If&nbsp;not&nbsp;provided,&nbsp;pooled&nbsp;negative_prompt_embeds&nbsp;will&nbsp;be&nbsp;generated&nbsp;from&nbsp;`negative_prompt`<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;input&nbsp;argument.<br>
@@ -189,7 +189,7 @@ Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Number&nbsp;of&nbsp;layers&nbsp;to&nbsp;be&nbsp;skipped&nbsp;from&nbsp;CLIP&nbsp;while&nbsp;computing&nbsp;the&nbsp;prompt&nbsp;embeddings.&nbsp;A&nbsp;value&nbsp;of&nbsp;1&nbsp;means&nbsp;that<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;output&nbsp;of&nbsp;the&nbsp;pre-final&nbsp;layer&nbsp;will&nbsp;be&nbsp;used&nbsp;for&nbsp;computing&nbsp;the&nbsp;prompt&nbsp;embeddings.</tt></dd></dl>
 
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-get_guidance_scale_embedding"><strong>get_guidance_scale_embedding</strong></a>(self, w: torch.Tensor, embedding_dim: int = 512, dtype: torch.dtype = torch.float32) -&gt; torch.FloatTensor</dt><dd><tt>See&nbsp;<a href="https://github.com/google-research/vdm/blob/dc27b98a554f65cdc654b800da5aa1846545d41b/model_vdm.py#L298">https://github.com/google-research/vdm/blob/dc27b98a554f65cdc654b800da5aa1846545d41b/model_vdm.py#L298</a><br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-get_guidance_scale_embedding"><strong>get_guidance_scale_embedding</strong></a>(self, w: torch.Tensor, embedding_dim: int = 512, dtype: torch.dtype = torch.float32) -&gt; torch.Tensor</dt><dd><tt>See&nbsp;<a href="https://github.com/google-research/vdm/blob/dc27b98a554f65cdc654b800da5aa1846545d41b/model_vdm.py#L298">https://github.com/google-research/vdm/blob/dc27b98a554f65cdc654b800da5aa1846545d41b/model_vdm.py#L298</a><br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;w&nbsp;(`torch.Tensor`):<br>
@@ -200,7 +200,7 @@ Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Data&nbsp;type&nbsp;of&nbsp;the&nbsp;generated&nbsp;embeddings.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;`torch.FloatTensor`:&nbsp;Embedding&nbsp;vectors&nbsp;with&nbsp;shape&nbsp;`(len(w),&nbsp;embedding_dim)`.</tt></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;`torch.Tensor`:&nbsp;Embedding&nbsp;vectors&nbsp;with&nbsp;shape&nbsp;`(len(w),&nbsp;embedding_dim)`.</tt></dd></dl>
 
 <dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-get_timesteps"><strong>get_timesteps</strong></a>(self, num_inference_steps, strength, device, denoising_start=None)</dt></dl>
 
@@ -442,9 +442,7 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;force_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;force&nbsp;the&nbsp;(re-)download&nbsp;of&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files,&nbsp;overriding&nbsp;the<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cached&nbsp;versions&nbsp;if&nbsp;they&nbsp;exist.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resume_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;resume&nbsp;downloading&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files.&nbsp;If&nbsp;set&nbsp;to&nbsp;`False`,&nbsp;any<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;incompletely&nbsp;downloaded&nbsp;files&nbsp;are&nbsp;deleted.<br>
+&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;proxies&nbsp;(`Dict[str,&nbsp;str]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;proxy&nbsp;servers&nbsp;to&nbsp;use&nbsp;by&nbsp;protocol&nbsp;or&nbsp;endpoint,&nbsp;for&nbsp;example,&nbsp;`{'http':&nbsp;'foo.bar:3128',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'<a href="http://hostname">http://hostname</a>':&nbsp;'foo.bar:4012'}`.&nbsp;The&nbsp;proxies&nbsp;are&nbsp;used&nbsp;on&nbsp;each&nbsp;request.<br>
@@ -569,9 +567,7 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cache_dir&nbsp;(`Union[str,&nbsp;os.PathLike]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Path&nbsp;to&nbsp;a&nbsp;directory&nbsp;where&nbsp;a&nbsp;downloaded&nbsp;pretrained&nbsp;model&nbsp;configuration&nbsp;is&nbsp;cached&nbsp;if&nbsp;the&nbsp;standard&nbsp;cache<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;is&nbsp;not&nbsp;used.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resume_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;resume&nbsp;downloading&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files.&nbsp;If&nbsp;set&nbsp;to&nbsp;`False`,&nbsp;any<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;incompletely&nbsp;downloaded&nbsp;files&nbsp;are&nbsp;deleted.<br>
+&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;proxies&nbsp;(`Dict[str,&nbsp;str]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;proxy&nbsp;servers&nbsp;to&nbsp;use&nbsp;by&nbsp;protocol&nbsp;or&nbsp;endpoint,&nbsp;for&nbsp;example,&nbsp;`{'http':&nbsp;'foo.bar:3128',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'<a href="http://hostname">http://hostname</a>':&nbsp;'foo.bar:4012'}`.&nbsp;The&nbsp;proxies&nbsp;are&nbsp;used&nbsp;on&nbsp;each&nbsp;request.<br>
@@ -795,9 +791,6 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;force_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;force&nbsp;the&nbsp;(re-)download&nbsp;of&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files,&nbsp;overriding&nbsp;the<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cached&nbsp;versions&nbsp;if&nbsp;they&nbsp;exist.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resume_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;resume&nbsp;downloading&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files.&nbsp;If&nbsp;set&nbsp;to&nbsp;`False`,&nbsp;any<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;incompletely&nbsp;downloaded&nbsp;files&nbsp;are&nbsp;deleted.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;proxies&nbsp;(`Dict[str,&nbsp;str]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;proxy&nbsp;servers&nbsp;to&nbsp;use&nbsp;by&nbsp;protocol&nbsp;or&nbsp;endpoint,&nbsp;for&nbsp;example,&nbsp;`{'http':&nbsp;'foo.bar:3128',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'<a href="http://hostname">http://hostname</a>':&nbsp;'foo.bar:4012'}`.&nbsp;The&nbsp;proxies&nbsp;are&nbsp;used&nbsp;on&nbsp;each&nbsp;request.<br>
@@ -978,9 +971,7 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;force_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;force&nbsp;the&nbsp;(re-)download&nbsp;of&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files,&nbsp;overriding&nbsp;the<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cached&nbsp;versions&nbsp;if&nbsp;they&nbsp;exist.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resume_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;resume&nbsp;downloading&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files.&nbsp;If&nbsp;set&nbsp;to&nbsp;`False`,&nbsp;any<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;incompletely&nbsp;downloaded&nbsp;files&nbsp;are&nbsp;deleted.<br>
+&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;proxies&nbsp;(`Dict[str,&nbsp;str]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;proxy&nbsp;servers&nbsp;to&nbsp;use&nbsp;by&nbsp;protocol&nbsp;or&nbsp;endpoint,&nbsp;for&nbsp;example,&nbsp;`{'http':&nbsp;'foo.bar:3128',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'<a href="http://hostname">http://hostname</a>':&nbsp;'foo.bar:4012'}`.&nbsp;The&nbsp;proxies&nbsp;are&nbsp;used&nbsp;on&nbsp;each&nbsp;request.<br>
@@ -1126,9 +1117,7 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cache_dir&nbsp;(`Union[str,&nbsp;os.PathLike]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Path&nbsp;to&nbsp;a&nbsp;directory&nbsp;where&nbsp;a&nbsp;downloaded&nbsp;pretrained&nbsp;model&nbsp;configuration&nbsp;is&nbsp;cached&nbsp;if&nbsp;the&nbsp;standard&nbsp;cache<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;is&nbsp;not&nbsp;used.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resume_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;resume&nbsp;downloading&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files.&nbsp;If&nbsp;set&nbsp;to&nbsp;`False`,&nbsp;any<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;incompletely&nbsp;downloaded&nbsp;files&nbsp;are&nbsp;deleted.<br>
+&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;proxies&nbsp;(`Dict[str,&nbsp;str]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;proxy&nbsp;servers&nbsp;to&nbsp;use&nbsp;by&nbsp;protocol&nbsp;or&nbsp;endpoint,&nbsp;for&nbsp;example,&nbsp;`{'http':&nbsp;'foo.bar:3128',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'<a href="http://hostname">http://hostname</a>':&nbsp;'foo.bar:4012'}`.&nbsp;The&nbsp;proxies&nbsp;are&nbsp;used&nbsp;on&nbsp;each&nbsp;request.<br>
@@ -1144,27 +1133,12 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;original_config_file&nbsp;(`str`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;path&nbsp;to&nbsp;the&nbsp;original&nbsp;config&nbsp;file&nbsp;that&nbsp;was&nbsp;used&nbsp;to&nbsp;train&nbsp;the&nbsp;model.&nbsp;If&nbsp;not&nbsp;provided,&nbsp;the&nbsp;config&nbsp;file<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;will&nbsp;be&nbsp;inferred&nbsp;from&nbsp;the&nbsp;checkpoint&nbsp;file.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;model_type&nbsp;(`str`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;type&nbsp;of&nbsp;model&nbsp;to&nbsp;load.&nbsp;If&nbsp;not&nbsp;provided,&nbsp;the&nbsp;model&nbsp;type&nbsp;will&nbsp;be&nbsp;inferred&nbsp;from&nbsp;the&nbsp;checkpoint&nbsp;file.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;image_size&nbsp;(`int`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;size&nbsp;of&nbsp;the&nbsp;image&nbsp;output.&nbsp;It's&nbsp;used&nbsp;to&nbsp;configure&nbsp;the&nbsp;`sample_size`&nbsp;parameter&nbsp;of&nbsp;the&nbsp;UNet&nbsp;and&nbsp;VAE<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;model.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;load_safety_checker&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;to&nbsp;load&nbsp;the&nbsp;safety&nbsp;checker&nbsp;model&nbsp;or&nbsp;not.&nbsp;By&nbsp;default,&nbsp;the&nbsp;safety&nbsp;checker&nbsp;is&nbsp;not&nbsp;loaded&nbsp;unless&nbsp;a<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`safety_checker`&nbsp;component&nbsp;is&nbsp;passed&nbsp;to&nbsp;the&nbsp;`kwargs`.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;num_in_channels&nbsp;(`int`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Specify&nbsp;the&nbsp;number&nbsp;of&nbsp;input&nbsp;channels&nbsp;for&nbsp;the&nbsp;UNet&nbsp;model.&nbsp;Read&nbsp;more&nbsp;about&nbsp;how&nbsp;to&nbsp;configure&nbsp;UNet&nbsp;model<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;this&nbsp;parameter<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[here](<a href="https://huggingface.co/docs/diffusers/training/adapt_a_model#configure-unet2dconditionmodel-parameters">https://huggingface.co/docs/diffusers/training/adapt_a_model#configure-unet2dconditionmodel-parameters</a>).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;scaling_factor&nbsp;(`float`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;scaling&nbsp;factor&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;VAE&nbsp;model.&nbsp;If&nbsp;not&nbsp;provided,&nbsp;it&nbsp;is&nbsp;inferred&nbsp;from&nbsp;the&nbsp;config&nbsp;file<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;first.&nbsp;If&nbsp;the&nbsp;scaling&nbsp;factor&nbsp;is&nbsp;not&nbsp;found&nbsp;in&nbsp;the&nbsp;config&nbsp;file,&nbsp;the&nbsp;default&nbsp;value&nbsp;0.18215&nbsp;is&nbsp;used.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;scheduler_type&nbsp;(`str`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;type&nbsp;of&nbsp;scheduler&nbsp;to&nbsp;load.&nbsp;If&nbsp;not&nbsp;provided,&nbsp;the&nbsp;scheduler&nbsp;type&nbsp;will&nbsp;be&nbsp;inferred&nbsp;from&nbsp;the&nbsp;checkpoint<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;prediction_type&nbsp;(`str`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;type&nbsp;of&nbsp;prediction&nbsp;to&nbsp;load.&nbsp;If&nbsp;not&nbsp;provided,&nbsp;the&nbsp;prediction&nbsp;type&nbsp;will&nbsp;be&nbsp;inferred&nbsp;from&nbsp;the<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;checkpoint&nbsp;file.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;config&nbsp;(`str`,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Can&nbsp;be&nbsp;either:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;A&nbsp;string,&nbsp;the&nbsp;*repo&nbsp;id*&nbsp;(for&nbsp;example&nbsp;`CompVis/ldm-text2im-large-256`)&nbsp;of&nbsp;a&nbsp;pretrained&nbsp;pipeline<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hosted&nbsp;on&nbsp;the&nbsp;Hub.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;A&nbsp;path&nbsp;to&nbsp;a&nbsp;*directory*&nbsp;(for&nbsp;example&nbsp;`./my_pipeline_directory/`)&nbsp;containing&nbsp;the&nbsp;pipeline<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;component&nbsp;configs&nbsp;in&nbsp;Diffusers&nbsp;format.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;kwargs&nbsp;(remaining&nbsp;dictionary&nbsp;of&nbsp;keyword&nbsp;arguments,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Can&nbsp;be&nbsp;used&nbsp;to&nbsp;overwrite&nbsp;load&nbsp;and&nbsp;saveable&nbsp;variables&nbsp;(the&nbsp;pipeline&nbsp;components&nbsp;of&nbsp;the&nbsp;specific&nbsp;pipeline<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;class).&nbsp;The&nbsp;overwritten&nbsp;components&nbsp;are&nbsp;passed&nbsp;directly&nbsp;to&nbsp;the&nbsp;pipelines&nbsp;`__init__`&nbsp;method.&nbsp;See&nbsp;example<br>
@@ -1182,7 +1156,7 @@ Examples:<br>
 &nbsp;<br>
 &gt;&gt;&gt;&nbsp;#&nbsp;Download&nbsp;pipeline&nbsp;from&nbsp;local&nbsp;file<br>
 &gt;&gt;&gt;&nbsp;#&nbsp;file&nbsp;is&nbsp;downloaded&nbsp;under&nbsp;./v1-5-pruned-emaonly.ckpt<br>
-&gt;&gt;&gt;&nbsp;pipeline&nbsp;=&nbsp;StableDiffusionPipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-from_single_file">from_single_file</a>("./v1-5-pruned-emaonly")<br>
+&gt;&gt;&gt;&nbsp;pipeline&nbsp;=&nbsp;StableDiffusionPipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-from_single_file">from_single_file</a>("./v1-5-pruned-emaonly.ckpt")<br>
 &nbsp;<br>
 &gt;&gt;&gt;&nbsp;#&nbsp;Enable&nbsp;float16&nbsp;and&nbsp;move&nbsp;to&nbsp;GPU<br>
 &gt;&gt;&gt;&nbsp;pipeline&nbsp;=&nbsp;StableDiffusionPipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-from_single_file">from_single_file</a>(<br>
@@ -1193,78 +1167,8 @@ Examples:<br>
 ```</tt></dd></dl>
 
 <hr>
-Methods inherited from <a href="diffusers.loaders.lora.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora.StableDiffusionXLLoraLoaderMixin</a>:<br>
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-load_lora_weights"><strong>load_lora_weights</strong></a>(self, pretrained_model_name_or_path_or_dict: Union[str, Dict[str, torch.Tensor]], adapter_name: Optional[str] = None, **kwargs)</dt><dd><tt>Load&nbsp;LoRA&nbsp;weights&nbsp;specified&nbsp;in&nbsp;`pretrained_model_name_or_path_or_dict`&nbsp;into&nbsp;`self.<strong>unet</strong>`&nbsp;and<br>
-`self.<strong>text_encoder</strong>`.<br>
-&nbsp;<br>
-All&nbsp;kwargs&nbsp;are&nbsp;forwarded&nbsp;to&nbsp;`self.<strong>lora_state_dict</strong>`.<br>
-&nbsp;<br>
-See&nbsp;[`~loaders.LoraLoaderMixin.lora_state_dict`]&nbsp;for&nbsp;more&nbsp;details&nbsp;on&nbsp;how&nbsp;the&nbsp;state&nbsp;dict&nbsp;is&nbsp;loaded.<br>
-&nbsp;<br>
-See&nbsp;[`~loaders.LoraLoaderMixin.load_lora_into_unet`]&nbsp;for&nbsp;more&nbsp;details&nbsp;on&nbsp;how&nbsp;the&nbsp;state&nbsp;dict&nbsp;is&nbsp;loaded&nbsp;into<br>
-`self.<strong>unet</strong>`.<br>
-&nbsp;<br>
-See&nbsp;[`~loaders.LoraLoaderMixin.load_lora_into_text_encoder`]&nbsp;for&nbsp;more&nbsp;details&nbsp;on&nbsp;how&nbsp;the&nbsp;state&nbsp;dict&nbsp;is&nbsp;loaded<br>
-into&nbsp;`self.<strong>text_encoder</strong>`.<br>
-&nbsp;<br>
-Parameters:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;pretrained_model_name_or_path_or_dict&nbsp;(`str`&nbsp;or&nbsp;`os.PathLike`&nbsp;or&nbsp;`dict`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;[`~loaders.LoraLoaderMixin.lora_state_dict`].<br>
-&nbsp;&nbsp;&nbsp;&nbsp;adapter_name&nbsp;(`str`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Adapter&nbsp;name&nbsp;to&nbsp;be&nbsp;used&nbsp;for&nbsp;referencing&nbsp;the&nbsp;loaded&nbsp;adapter&nbsp;model.&nbsp;If&nbsp;not&nbsp;specified,&nbsp;it&nbsp;will&nbsp;use<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`default_{i}`&nbsp;where&nbsp;i&nbsp;is&nbsp;the&nbsp;total&nbsp;number&nbsp;of&nbsp;adapters&nbsp;being&nbsp;loaded.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;kwargs&nbsp;(`dict`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;[`~loaders.LoraLoaderMixin.lora_state_dict`].</tt></dd></dl>
-
-<hr>
-Class methods inherited from <a href="diffusers.loaders.lora.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora.StableDiffusionXLLoraLoaderMixin</a>:<br>
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-save_lora_weights"><strong>save_lora_weights</strong></a>(save_directory: Union[str, os.PathLike], unet_lora_layers: Dict[str, Union[torch.nn.modules.module.Module, torch.Tensor]] = None, text_encoder_lora_layers: Dict[str, Union[torch.nn.modules.module.Module, torch.Tensor]] = None, text_encoder_2_lora_layers: Dict[str, Union[torch.nn.modules.module.Module, torch.Tensor]] = None, is_main_process: bool = True, weight_name: str = None, save_function: Callable = None, safe_serialization: bool = True)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>Save&nbsp;the&nbsp;LoRA&nbsp;parameters&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;UNet&nbsp;and&nbsp;text&nbsp;encoder.<br>
-&nbsp;<br>
-Arguments:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;save_directory&nbsp;(`str`&nbsp;or&nbsp;`os.PathLike`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Directory&nbsp;to&nbsp;save&nbsp;LoRA&nbsp;parameters&nbsp;to.&nbsp;Will&nbsp;be&nbsp;created&nbsp;if&nbsp;it&nbsp;doesn't&nbsp;exist.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;unet_lora_layers&nbsp;(`Dict[str,&nbsp;torch.nn.Module]`&nbsp;or&nbsp;`Dict[str,&nbsp;torch.Tensor]`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;State&nbsp;dict&nbsp;of&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;`unet`.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;text_encoder_lora_layers&nbsp;(`Dict[str,&nbsp;torch.nn.Module]`&nbsp;or&nbsp;`Dict[str,&nbsp;torch.Tensor]`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;State&nbsp;dict&nbsp;of&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;`text_encoder`.&nbsp;Must&nbsp;explicitly&nbsp;pass&nbsp;the&nbsp;text<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoder&nbsp;LoRA&nbsp;state&nbsp;dict&nbsp;because&nbsp;it&nbsp;comes&nbsp;from&nbsp;🤗&nbsp;Transformers.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;is_main_process&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`True`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;the&nbsp;process&nbsp;calling&nbsp;this&nbsp;is&nbsp;the&nbsp;main&nbsp;process&nbsp;or&nbsp;not.&nbsp;Useful&nbsp;during&nbsp;distributed&nbsp;training&nbsp;and&nbsp;you<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;need&nbsp;to&nbsp;call&nbsp;this&nbsp;function&nbsp;on&nbsp;all&nbsp;processes.&nbsp;In&nbsp;this&nbsp;case,&nbsp;set&nbsp;`is_main_process=True`&nbsp;only&nbsp;on&nbsp;the&nbsp;main<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;process&nbsp;to&nbsp;avoid&nbsp;race&nbsp;conditions.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;save_function&nbsp;(`Callable`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;function&nbsp;to&nbsp;use&nbsp;to&nbsp;save&nbsp;the&nbsp;state&nbsp;dictionary.&nbsp;Useful&nbsp;during&nbsp;distributed&nbsp;training&nbsp;when&nbsp;you&nbsp;need&nbsp;to<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replace&nbsp;`torch.save`&nbsp;with&nbsp;another&nbsp;method.&nbsp;Can&nbsp;be&nbsp;configured&nbsp;with&nbsp;the&nbsp;environment&nbsp;variable<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`DIFFUSERS_SAVE_MODE`.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;safe_serialization&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`True`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;to&nbsp;save&nbsp;the&nbsp;model&nbsp;using&nbsp;`safetensors`&nbsp;or&nbsp;the&nbsp;traditional&nbsp;PyTorch&nbsp;way&nbsp;with&nbsp;`pickle`.</tt></dd></dl>
-
-<hr>
-Methods inherited from <a href="diffusers.loaders.lora.html#LoraLoaderMixin">diffusers.loaders.lora.LoraLoaderMixin</a>:<br>
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-delete_adapters"><strong>delete_adapters</strong></a>(self, adapter_names: Union[List[str], str])</dt><dd><tt>Args:<br>
-Deletes&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;of&nbsp;`adapter_name`&nbsp;for&nbsp;the&nbsp;unet&nbsp;and&nbsp;text-encoder(s).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;adapter_names&nbsp;(`Union[List[str],&nbsp;str]`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;names&nbsp;of&nbsp;the&nbsp;adapter&nbsp;to&nbsp;delete.&nbsp;Can&nbsp;be&nbsp;a&nbsp;single&nbsp;string&nbsp;or&nbsp;a&nbsp;list&nbsp;of&nbsp;strings</tt></dd></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-disable_lora"><strong>disable_lora</strong></a>(self)</dt></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-disable_lora_for_text_encoder"><strong>disable_lora_for_text_encoder</strong></a>(self, text_encoder: Optional[ForwardRef('PreTrainedModel')] = None)</dt><dd><tt>Disables&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;for&nbsp;the&nbsp;text&nbsp;encoder.<br>
-&nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;text_encoder&nbsp;(`torch.nn.Module`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;text&nbsp;encoder&nbsp;module&nbsp;to&nbsp;disable&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;for.&nbsp;If&nbsp;`None`,&nbsp;it&nbsp;will&nbsp;try&nbsp;to&nbsp;get&nbsp;the<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`text_encoder`&nbsp;attribute.</tt></dd></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-enable_lora"><strong>enable_lora</strong></a>(self)</dt></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-enable_lora_for_text_encoder"><strong>enable_lora_for_text_encoder</strong></a>(self, text_encoder: Optional[ForwardRef('PreTrainedModel')] = None)</dt><dd><tt>Enables&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;for&nbsp;the&nbsp;text&nbsp;encoder.<br>
-&nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;text_encoder&nbsp;(`torch.nn.Module`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;text&nbsp;encoder&nbsp;module&nbsp;to&nbsp;enable&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;for.&nbsp;If&nbsp;`None`,&nbsp;it&nbsp;will&nbsp;try&nbsp;to&nbsp;get&nbsp;the&nbsp;`text_encoder`<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute.</tt></dd></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-fuse_lora"><strong>fuse_lora</strong></a>(self, fuse_unet: bool = True, fuse_text_encoder: bool = True, lora_scale: float = 1.0, safe_fusing: bool = False, adapter_names: Optional[List[str]] = None)</dt><dd><tt>Fuses&nbsp;the&nbsp;LoRA&nbsp;parameters&nbsp;into&nbsp;the&nbsp;original&nbsp;parameters&nbsp;of&nbsp;the&nbsp;corresponding&nbsp;blocks.<br>
+Methods inherited from <a href="diffusers.loaders.lora_pipeline.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora_pipeline.StableDiffusionXLLoraLoaderMixin</a>:<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-fuse_lora"><strong>fuse_lora</strong></a>(self, components: List[str] = ['unet', 'text_encoder', 'text_encoder_2'], lora_scale: float = 1.0, safe_fusing: bool = False, adapter_names: Optional[List[str]] = None, **kwargs)</dt><dd><tt>Fuses&nbsp;the&nbsp;LoRA&nbsp;parameters&nbsp;into&nbsp;the&nbsp;original&nbsp;parameters&nbsp;of&nbsp;the&nbsp;corresponding&nbsp;blocks.<br>
 &nbsp;<br>
 &lt;Tip&nbsp;warning={true}&gt;<br>
 &nbsp;<br>
@@ -1273,10 +1177,7 @@ This&nbsp;is&nbsp;an&nbsp;experimental&nbsp;API.<br>
 &lt;/Tip&gt;<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fuse_unet&nbsp;(`bool`,&nbsp;defaults&nbsp;to&nbsp;`True`):&nbsp;Whether&nbsp;to&nbsp;fuse&nbsp;the&nbsp;UNet&nbsp;LoRA&nbsp;parameters.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fuse_text_encoder&nbsp;(`bool`,&nbsp;defaults&nbsp;to&nbsp;`True`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;to&nbsp;fuse&nbsp;the&nbsp;text&nbsp;encoder&nbsp;LoRA&nbsp;parameters.&nbsp;If&nbsp;the&nbsp;text&nbsp;encoder&nbsp;wasn't&nbsp;monkey-patched&nbsp;with&nbsp;the<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LoRA&nbsp;parameters&nbsp;then&nbsp;it&nbsp;won't&nbsp;have&nbsp;any&nbsp;effect.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;components:&nbsp;(`List[str]`):&nbsp;List&nbsp;of&nbsp;LoRA-injectable&nbsp;components&nbsp;to&nbsp;fuse&nbsp;the&nbsp;LoRAs&nbsp;into.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;lora_scale&nbsp;(`float`,&nbsp;defaults&nbsp;to&nbsp;1.0):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Controls&nbsp;how&nbsp;much&nbsp;to&nbsp;influence&nbsp;the&nbsp;outputs&nbsp;with&nbsp;the&nbsp;LoRA&nbsp;parameters.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;safe_fusing&nbsp;(`bool`,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
@@ -1297,46 +1198,31 @@ pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-load_lora_weights">loa
 pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-fuse_lora">fuse_lora</a>(lora_scale=0.7)<br>
 ```</tt></dd></dl>
 
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-get_active_adapters"><strong>get_active_adapters</strong></a>(self) -&gt; List[str]</dt><dd><tt>Gets&nbsp;the&nbsp;list&nbsp;of&nbsp;the&nbsp;current&nbsp;active&nbsp;adapters.<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-load_lora_weights"><strong>load_lora_weights</strong></a>(self, pretrained_model_name_or_path_or_dict: Union[str, Dict[str, torch.Tensor]], adapter_name: Optional[str] = None, **kwargs)</dt><dd><tt>Load&nbsp;LoRA&nbsp;weights&nbsp;specified&nbsp;in&nbsp;`pretrained_model_name_or_path_or_dict`&nbsp;into&nbsp;`self.<strong>unet</strong>`&nbsp;and<br>
+`self.<strong>text_encoder</strong>`.<br>
 &nbsp;<br>
-Example:<br>
+All&nbsp;kwargs&nbsp;are&nbsp;forwarded&nbsp;to&nbsp;`self.<strong>lora_state_dict</strong>`.<br>
 &nbsp;<br>
-```python<br>
-from&nbsp;diffusers&nbsp;import&nbsp;DiffusionPipeline<br>
+See&nbsp;[`~loaders.StableDiffusionLoraLoaderMixin.lora_state_dict`]&nbsp;for&nbsp;more&nbsp;details&nbsp;on&nbsp;how&nbsp;the&nbsp;state&nbsp;dict&nbsp;is<br>
+loaded.<br>
 &nbsp;<br>
-pipeline&nbsp;=&nbsp;DiffusionPipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-from_pretrained">from_pretrained</a>(<br>
-&nbsp;&nbsp;&nbsp;&nbsp;"stabilityai/stable-diffusion-xl-base-1.0",<br>
-).<a href="#MaskedStableDiffusionXLImg2ImgPipeline-to">to</a>("cuda")<br>
-pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-load_lora_weights">load_lora_weights</a>("CiroN2022/toy-face",&nbsp;weight_name="toy_face_sdxl.safetensors",&nbsp;adapter_name="toy")<br>
-pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-get_active_adapters">get_active_adapters</a>()<br>
-```</tt></dd></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-get_list_adapters"><strong>get_list_adapters</strong></a>(self) -&gt; Dict[str, List[str]]</dt><dd><tt>Gets&nbsp;the&nbsp;current&nbsp;list&nbsp;of&nbsp;all&nbsp;available&nbsp;adapters&nbsp;in&nbsp;the&nbsp;pipeline.</tt></dd></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-set_adapters"><strong>set_adapters</strong></a>(self, adapter_names: Union[List[str], str], adapter_weights: Union[float, Dict, List[float], List[Dict], NoneType] = None)</dt></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-set_adapters_for_text_encoder"><strong>set_adapters_for_text_encoder</strong></a>(self, adapter_names: Union[List[str], str], text_encoder: Optional[ForwardRef('PreTrainedModel')] = None, text_encoder_weights: Union[float, List[float], List[NoneType], NoneType] = None)</dt><dd><tt>Sets&nbsp;the&nbsp;adapter&nbsp;layers&nbsp;for&nbsp;the&nbsp;text&nbsp;encoder.<br>
+See&nbsp;[`~loaders.StableDiffusionLoraLoaderMixin.load_lora_into_unet`]&nbsp;for&nbsp;more&nbsp;details&nbsp;on&nbsp;how&nbsp;the&nbsp;state&nbsp;dict&nbsp;is<br>
+loaded&nbsp;into&nbsp;`self.<strong>unet</strong>`.<br>
 &nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;adapter_names&nbsp;(`List[str]`&nbsp;or&nbsp;`str`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;names&nbsp;of&nbsp;the&nbsp;adapters&nbsp;to&nbsp;use.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;text_encoder&nbsp;(`torch.nn.Module`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;text&nbsp;encoder&nbsp;module&nbsp;to&nbsp;set&nbsp;the&nbsp;adapter&nbsp;layers&nbsp;for.&nbsp;If&nbsp;`None`,&nbsp;it&nbsp;will&nbsp;try&nbsp;to&nbsp;get&nbsp;the&nbsp;`text_encoder`<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;text_encoder_weights&nbsp;(`List[float]`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;weights&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;text&nbsp;encoder.&nbsp;If&nbsp;`None`,&nbsp;the&nbsp;weights&nbsp;are&nbsp;set&nbsp;to&nbsp;`1.0`&nbsp;for&nbsp;all&nbsp;the&nbsp;adapters.</tt></dd></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-set_lora_device"><strong>set_lora_device</strong></a>(self, adapter_names: List[str], device: Union[torch.device, str, int]) -&gt; None</dt><dd><tt>Moves&nbsp;the&nbsp;LoRAs&nbsp;listed&nbsp;in&nbsp;`adapter_names`&nbsp;to&nbsp;a&nbsp;target&nbsp;device.&nbsp;Useful&nbsp;for&nbsp;offloading&nbsp;the&nbsp;LoRA&nbsp;to&nbsp;the&nbsp;CPU&nbsp;in&nbsp;case<br>
-you&nbsp;want&nbsp;to&nbsp;load&nbsp;multiple&nbsp;adapters&nbsp;and&nbsp;free&nbsp;some&nbsp;GPU&nbsp;memory.<br>
+See&nbsp;[`~loaders.StableDiffusionLoraLoaderMixin.load_lora_into_text_encoder`]&nbsp;for&nbsp;more&nbsp;details&nbsp;on&nbsp;how&nbsp;the&nbsp;state<br>
+dict&nbsp;is&nbsp;loaded&nbsp;into&nbsp;`self.<strong>text_encoder</strong>`.<br>
 &nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;adapter_names&nbsp;(`List[str]`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;List&nbsp;of&nbsp;adapters&nbsp;to&nbsp;send&nbsp;device&nbsp;to.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;device&nbsp;(`Union[torch.device,&nbsp;str,&nbsp;int]`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Device&nbsp;to&nbsp;send&nbsp;the&nbsp;adapters&nbsp;to.&nbsp;Can&nbsp;be&nbsp;either&nbsp;a&nbsp;torch&nbsp;device,&nbsp;a&nbsp;str&nbsp;or&nbsp;an&nbsp;integer.</tt></dd></dl>
+Parameters:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pretrained_model_name_or_path_or_dict&nbsp;(`str`&nbsp;or&nbsp;`os.PathLike`&nbsp;or&nbsp;`dict`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;[`~loaders.StableDiffusionLoraLoaderMixin.lora_state_dict`].<br>
+&nbsp;&nbsp;&nbsp;&nbsp;adapter_name&nbsp;(`str`,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Adapter&nbsp;name&nbsp;to&nbsp;be&nbsp;used&nbsp;for&nbsp;referencing&nbsp;the&nbsp;loaded&nbsp;adapter&nbsp;model.&nbsp;If&nbsp;not&nbsp;specified,&nbsp;it&nbsp;will&nbsp;use<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`default_{i}`&nbsp;where&nbsp;i&nbsp;is&nbsp;the&nbsp;total&nbsp;number&nbsp;of&nbsp;adapters&nbsp;being&nbsp;loaded.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;kwargs&nbsp;(`dict`,&nbsp;*optional*):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;[`~loaders.StableDiffusionLoraLoaderMixin.lora_state_dict`].</tt></dd></dl>
 
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-unfuse_lora"><strong>unfuse_lora</strong></a>(self, unfuse_unet: bool = True, unfuse_text_encoder: bool = True)</dt><dd><tt>Reverses&nbsp;the&nbsp;effect&nbsp;of<br>
-[`pipe.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-fuse_lora">fuse_lora</a>()`](<a href="https://huggingface.co/docs/diffusers/main/en/api/loaders#diffusers.loaders.LoraLoaderMixin.fuse_lora">https://huggingface.co/docs/diffusers/main/en/api/loaders#diffusers.loaders.LoraLoaderMixin.fuse_lora</a>).<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-unfuse_lora"><strong>unfuse_lora</strong></a>(self, components: List[str] = ['unet', 'text_encoder', 'text_encoder_2'], **kwargs)</dt><dd><tt>Reverses&nbsp;the&nbsp;effect&nbsp;of<br>
+[`pipe.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-fuse_lora">fuse_lora</a>()`](<a href="https://huggingface.co/docs/diffusers/main/en/api/loaders#diffusers.loaders.LoraBaseMixin.fuse_lora">https://huggingface.co/docs/diffusers/main/en/api/loaders#diffusers.loaders.LoraBaseMixin.fuse_lora</a>).<br>
 &nbsp;<br>
 &lt;Tip&nbsp;warning={true}&gt;<br>
 &nbsp;<br>
@@ -1345,24 +1231,15 @@ This&nbsp;is&nbsp;an&nbsp;experimental&nbsp;API.<br>
 &lt;/Tip&gt;<br>
 &nbsp;<br>
 Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;components&nbsp;(`List[str]`):&nbsp;List&nbsp;of&nbsp;LoRA-injectable&nbsp;components&nbsp;to&nbsp;unfuse&nbsp;LoRA&nbsp;from.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;unfuse_unet&nbsp;(`bool`,&nbsp;defaults&nbsp;to&nbsp;`True`):&nbsp;Whether&nbsp;to&nbsp;unfuse&nbsp;the&nbsp;UNet&nbsp;LoRA&nbsp;parameters.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;unfuse_text_encoder&nbsp;(`bool`,&nbsp;defaults&nbsp;to&nbsp;`True`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;to&nbsp;unfuse&nbsp;the&nbsp;text&nbsp;encoder&nbsp;LoRA&nbsp;parameters.&nbsp;If&nbsp;the&nbsp;text&nbsp;encoder&nbsp;wasn't&nbsp;monkey-patched&nbsp;with&nbsp;the<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LoRA&nbsp;parameters&nbsp;then&nbsp;it&nbsp;won't&nbsp;have&nbsp;any&nbsp;effect.</tt></dd></dl>
 
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-unload_lora_weights"><strong>unload_lora_weights</strong></a>(self)</dt><dd><tt>Unloads&nbsp;the&nbsp;LoRA&nbsp;parameters.<br>
-&nbsp;<br>
-Examples:<br>
-&nbsp;<br>
-```python<br>
-&gt;&gt;&gt;&nbsp;#&nbsp;Assuming&nbsp;`pipeline`&nbsp;is&nbsp;already&nbsp;loaded&nbsp;with&nbsp;the&nbsp;LoRA&nbsp;parameters.<br>
-&gt;&gt;&gt;&nbsp;pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-unload_lora_weights">unload_lora_weights</a>()<br>
-&gt;&gt;&gt;&nbsp;...<br>
-```</tt></dd></dl>
-
 <hr>
-Class methods inherited from <a href="diffusers.loaders.lora.html#LoraLoaderMixin">diffusers.loaders.lora.LoraLoaderMixin</a>:<br>
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-load_lora_into_text_encoder"><strong>load_lora_into_text_encoder</strong></a>(state_dict, network_alphas, text_encoder, prefix=None, lora_scale=1.0, low_cpu_mem_usage=None, adapter_name=None, _pipeline=None)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>This&nbsp;will&nbsp;load&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;specified&nbsp;in&nbsp;`state_dict`&nbsp;into&nbsp;`text_encoder`<br>
+Class methods inherited from <a href="diffusers.loaders.lora_pipeline.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora_pipeline.StableDiffusionXLLoraLoaderMixin</a>:<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-load_lora_into_text_encoder"><strong>load_lora_into_text_encoder</strong></a>(state_dict, network_alphas, text_encoder, prefix=None, lora_scale=1.0, adapter_name=None, _pipeline=None)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>This&nbsp;will&nbsp;load&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;specified&nbsp;in&nbsp;`state_dict`&nbsp;into&nbsp;`text_encoder`<br>
 &nbsp;<br>
 Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;state_dict&nbsp;(`dict`):<br>
@@ -1377,16 +1254,11 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;lora_scale&nbsp;(`float`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;How&nbsp;much&nbsp;to&nbsp;scale&nbsp;the&nbsp;output&nbsp;of&nbsp;the&nbsp;lora&nbsp;linear&nbsp;layer&nbsp;before&nbsp;it&nbsp;is&nbsp;added&nbsp;with&nbsp;the&nbsp;output&nbsp;of&nbsp;the&nbsp;regular<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lora&nbsp;layer.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;low_cpu_mem_usage&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`True`&nbsp;if&nbsp;torch&nbsp;version&nbsp;&gt;=&nbsp;1.9.0&nbsp;else&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Speed&nbsp;up&nbsp;model&nbsp;loading&nbsp;only&nbsp;loading&nbsp;the&nbsp;pretrained&nbsp;weights&nbsp;and&nbsp;not&nbsp;initializing&nbsp;the&nbsp;weights.&nbsp;This&nbsp;also<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tries&nbsp;to&nbsp;not&nbsp;use&nbsp;more&nbsp;than&nbsp;1x&nbsp;model&nbsp;size&nbsp;in&nbsp;CPU&nbsp;memory&nbsp;(including&nbsp;peak&nbsp;memory)&nbsp;while&nbsp;loading&nbsp;the&nbsp;model.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Only&nbsp;supported&nbsp;for&nbsp;PyTorch&nbsp;&gt;=&nbsp;1.9.0.&nbsp;If&nbsp;you&nbsp;are&nbsp;using&nbsp;an&nbsp;older&nbsp;version&nbsp;of&nbsp;PyTorch,&nbsp;setting&nbsp;this<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;argument&nbsp;to&nbsp;`True`&nbsp;will&nbsp;raise&nbsp;an&nbsp;error.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;adapter_name&nbsp;(`str`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Adapter&nbsp;name&nbsp;to&nbsp;be&nbsp;used&nbsp;for&nbsp;referencing&nbsp;the&nbsp;loaded&nbsp;adapter&nbsp;model.&nbsp;If&nbsp;not&nbsp;specified,&nbsp;it&nbsp;will&nbsp;use<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`default_{i}`&nbsp;where&nbsp;i&nbsp;is&nbsp;the&nbsp;total&nbsp;number&nbsp;of&nbsp;adapters&nbsp;being&nbsp;loaded.</tt></dd></dl>
 
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-load_lora_into_transformer"><strong>load_lora_into_transformer</strong></a>(state_dict, network_alphas, transformer, low_cpu_mem_usage=None, adapter_name=None, _pipeline=None)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>This&nbsp;will&nbsp;load&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;specified&nbsp;in&nbsp;`state_dict`&nbsp;into&nbsp;`transformer`.<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-load_lora_into_unet"><strong>load_lora_into_unet</strong></a>(state_dict, network_alphas, unet, adapter_name=None, _pipeline=None)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>This&nbsp;will&nbsp;load&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;specified&nbsp;in&nbsp;`state_dict`&nbsp;into&nbsp;`unet`.<br>
 &nbsp;<br>
 Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;state_dict&nbsp;(`dict`):<br>
@@ -1394,34 +1266,11 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;into&nbsp;the&nbsp;unet&nbsp;or&nbsp;prefixed&nbsp;with&nbsp;an&nbsp;additional&nbsp;`unet`&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;to&nbsp;distinguish&nbsp;between&nbsp;text<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoder&nbsp;lora&nbsp;layers.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;network_alphas&nbsp;(`Dict[str,&nbsp;float]`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;`LoRALinearLayer`&nbsp;for&nbsp;more&nbsp;details.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;value&nbsp;of&nbsp;the&nbsp;network&nbsp;alpha&nbsp;used&nbsp;for&nbsp;stable&nbsp;learning&nbsp;and&nbsp;preventing&nbsp;underflow.&nbsp;This&nbsp;value&nbsp;has&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;same&nbsp;meaning&nbsp;as&nbsp;the&nbsp;`--network_alpha`&nbsp;option&nbsp;in&nbsp;the&nbsp;kohya-ss&nbsp;trainer&nbsp;script.&nbsp;Refer&nbsp;to&nbsp;[this<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;link](<a href="https://github.com/darkstorm2150/sd-scripts/blob/main/docs/train_network_README-en.md#execute-learning">https://github.com/darkstorm2150/sd-scripts/blob/main/docs/train_network_README-en.md#execute-learning</a>).<br>
 &nbsp;&nbsp;&nbsp;&nbsp;unet&nbsp;(`UNet2DConditionModel`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;UNet&nbsp;model&nbsp;to&nbsp;load&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;into.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;low_cpu_mem_usage&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`True`&nbsp;if&nbsp;torch&nbsp;version&nbsp;&gt;=&nbsp;1.9.0&nbsp;else&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Speed&nbsp;up&nbsp;model&nbsp;loading&nbsp;only&nbsp;loading&nbsp;the&nbsp;pretrained&nbsp;weights&nbsp;and&nbsp;not&nbsp;initializing&nbsp;the&nbsp;weights.&nbsp;This&nbsp;also<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tries&nbsp;to&nbsp;not&nbsp;use&nbsp;more&nbsp;than&nbsp;1x&nbsp;model&nbsp;size&nbsp;in&nbsp;CPU&nbsp;memory&nbsp;(including&nbsp;peak&nbsp;memory)&nbsp;while&nbsp;loading&nbsp;the&nbsp;model.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Only&nbsp;supported&nbsp;for&nbsp;PyTorch&nbsp;&gt;=&nbsp;1.9.0.&nbsp;If&nbsp;you&nbsp;are&nbsp;using&nbsp;an&nbsp;older&nbsp;version&nbsp;of&nbsp;PyTorch,&nbsp;setting&nbsp;this<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;argument&nbsp;to&nbsp;`True`&nbsp;will&nbsp;raise&nbsp;an&nbsp;error.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;adapter_name&nbsp;(`str`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Adapter&nbsp;name&nbsp;to&nbsp;be&nbsp;used&nbsp;for&nbsp;referencing&nbsp;the&nbsp;loaded&nbsp;adapter&nbsp;model.&nbsp;If&nbsp;not&nbsp;specified,&nbsp;it&nbsp;will&nbsp;use<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`default_{i}`&nbsp;where&nbsp;i&nbsp;is&nbsp;the&nbsp;total&nbsp;number&nbsp;of&nbsp;adapters&nbsp;being&nbsp;loaded.</tt></dd></dl>
-
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-load_lora_into_unet"><strong>load_lora_into_unet</strong></a>(state_dict, network_alphas, unet, low_cpu_mem_usage=None, adapter_name=None, _pipeline=None)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>This&nbsp;will&nbsp;load&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;specified&nbsp;in&nbsp;`state_dict`&nbsp;into&nbsp;`unet`.<br>
-&nbsp;<br>
-Parameters:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;state_dict&nbsp;(`dict`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;standard&nbsp;state&nbsp;dict&nbsp;containing&nbsp;the&nbsp;lora&nbsp;layer&nbsp;parameters.&nbsp;The&nbsp;keys&nbsp;can&nbsp;either&nbsp;be&nbsp;indexed&nbsp;directly<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;into&nbsp;the&nbsp;unet&nbsp;or&nbsp;prefixed&nbsp;with&nbsp;an&nbsp;additional&nbsp;`unet`&nbsp;which&nbsp;can&nbsp;be&nbsp;used&nbsp;to&nbsp;distinguish&nbsp;between&nbsp;text<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoder&nbsp;lora&nbsp;layers.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;network_alphas&nbsp;(`Dict[str,&nbsp;float]`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;`LoRALinearLayer`&nbsp;for&nbsp;more&nbsp;details.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;unet&nbsp;(`UNet2DConditionModel`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;UNet&nbsp;model&nbsp;to&nbsp;load&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;into.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;low_cpu_mem_usage&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`True`&nbsp;if&nbsp;torch&nbsp;version&nbsp;&gt;=&nbsp;1.9.0&nbsp;else&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Speed&nbsp;up&nbsp;model&nbsp;loading&nbsp;only&nbsp;loading&nbsp;the&nbsp;pretrained&nbsp;weights&nbsp;and&nbsp;not&nbsp;initializing&nbsp;the&nbsp;weights.&nbsp;This&nbsp;also<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tries&nbsp;to&nbsp;not&nbsp;use&nbsp;more&nbsp;than&nbsp;1x&nbsp;model&nbsp;size&nbsp;in&nbsp;CPU&nbsp;memory&nbsp;(including&nbsp;peak&nbsp;memory)&nbsp;while&nbsp;loading&nbsp;the&nbsp;model.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Only&nbsp;supported&nbsp;for&nbsp;PyTorch&nbsp;&gt;=&nbsp;1.9.0.&nbsp;If&nbsp;you&nbsp;are&nbsp;using&nbsp;an&nbsp;older&nbsp;version&nbsp;of&nbsp;PyTorch,&nbsp;setting&nbsp;this<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;argument&nbsp;to&nbsp;`True`&nbsp;will&nbsp;raise&nbsp;an&nbsp;error.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;adapter_name&nbsp;(`str`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Adapter&nbsp;name&nbsp;to&nbsp;be&nbsp;used&nbsp;for&nbsp;referencing&nbsp;the&nbsp;loaded&nbsp;adapter&nbsp;model.&nbsp;If&nbsp;not&nbsp;specified,&nbsp;it&nbsp;will&nbsp;use<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`default_{i}`&nbsp;where&nbsp;i&nbsp;is&nbsp;the&nbsp;total&nbsp;number&nbsp;of&nbsp;adapters&nbsp;being&nbsp;loaded.</tt></dd></dl>
@@ -1453,9 +1302,7 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;force_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;force&nbsp;the&nbsp;(re-)download&nbsp;of&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files,&nbsp;overriding&nbsp;the<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cached&nbsp;versions&nbsp;if&nbsp;they&nbsp;exist.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resume_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;resume&nbsp;downloading&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files.&nbsp;If&nbsp;set&nbsp;to&nbsp;`False`,&nbsp;any<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;incompletely&nbsp;downloaded&nbsp;files&nbsp;are&nbsp;deleted.<br>
+&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;proxies&nbsp;(`Dict[str,&nbsp;str]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;proxy&nbsp;servers&nbsp;to&nbsp;use&nbsp;by&nbsp;protocol&nbsp;or&nbsp;endpoint,&nbsp;for&nbsp;example,&nbsp;`{'http':&nbsp;'foo.bar:3128',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'<a href="http://hostname">http://hostname</a>':&nbsp;'foo.bar:4012'}`.&nbsp;The&nbsp;proxies&nbsp;are&nbsp;used&nbsp;on&nbsp;each&nbsp;request.<br>
@@ -1470,33 +1317,100 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allowed&nbsp;by&nbsp;Git.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;subfolder&nbsp;(`str`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`""`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;subfolder&nbsp;location&nbsp;of&nbsp;a&nbsp;model&nbsp;file&nbsp;within&nbsp;a&nbsp;larger&nbsp;model&nbsp;repository&nbsp;on&nbsp;the&nbsp;Hub&nbsp;or&nbsp;locally.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;low_cpu_mem_usage&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`True`&nbsp;if&nbsp;torch&nbsp;version&nbsp;&gt;=&nbsp;1.9.0&nbsp;else&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Speed&nbsp;up&nbsp;model&nbsp;loading&nbsp;only&nbsp;loading&nbsp;the&nbsp;pretrained&nbsp;weights&nbsp;and&nbsp;not&nbsp;initializing&nbsp;the&nbsp;weights.&nbsp;This&nbsp;also<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tries&nbsp;to&nbsp;not&nbsp;use&nbsp;more&nbsp;than&nbsp;1x&nbsp;model&nbsp;size&nbsp;in&nbsp;CPU&nbsp;memory&nbsp;(including&nbsp;peak&nbsp;memory)&nbsp;while&nbsp;loading&nbsp;the&nbsp;model.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Only&nbsp;supported&nbsp;for&nbsp;PyTorch&nbsp;&gt;=&nbsp;1.9.0.&nbsp;If&nbsp;you&nbsp;are&nbsp;using&nbsp;an&nbsp;older&nbsp;version&nbsp;of&nbsp;PyTorch,&nbsp;setting&nbsp;this<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;argument&nbsp;to&nbsp;`True`&nbsp;will&nbsp;raise&nbsp;an&nbsp;error.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;mirror&nbsp;(`str`,&nbsp;*optional*):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mirror&nbsp;source&nbsp;to&nbsp;resolve&nbsp;accessibility&nbsp;issues&nbsp;if&nbsp;you're&nbsp;downloading&nbsp;a&nbsp;model&nbsp;in&nbsp;China.&nbsp;We&nbsp;do&nbsp;not<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;guarantee&nbsp;the&nbsp;timeliness&nbsp;or&nbsp;safety&nbsp;of&nbsp;the&nbsp;source,&nbsp;and&nbsp;you&nbsp;should&nbsp;refer&nbsp;to&nbsp;the&nbsp;mirror&nbsp;site&nbsp;for&nbsp;more<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;information.</tt></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;weight_name&nbsp;(`str`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;None):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Name&nbsp;of&nbsp;the&nbsp;serialized&nbsp;state&nbsp;dict&nbsp;file.</tt></dd></dl>
+
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-save_lora_weights"><strong>save_lora_weights</strong></a>(save_directory: Union[str, os.PathLike], unet_lora_layers: Dict[str, Union[torch.nn.modules.module.Module, torch.Tensor]] = None, text_encoder_lora_layers: Dict[str, Union[torch.nn.modules.module.Module, torch.Tensor]] = None, text_encoder_2_lora_layers: Dict[str, Union[torch.nn.modules.module.Module, torch.Tensor]] = None, is_main_process: bool = True, weight_name: str = None, save_function: Callable = None, safe_serialization: bool = True)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>Save&nbsp;the&nbsp;LoRA&nbsp;parameters&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;UNet&nbsp;and&nbsp;text&nbsp;encoder.<br>
+&nbsp;<br>
+Arguments:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;save_directory&nbsp;(`str`&nbsp;or&nbsp;`os.PathLike`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Directory&nbsp;to&nbsp;save&nbsp;LoRA&nbsp;parameters&nbsp;to.&nbsp;Will&nbsp;be&nbsp;created&nbsp;if&nbsp;it&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;unet_lora_layers&nbsp;(`Dict[str,&nbsp;torch.nn.Module]`&nbsp;or&nbsp;`Dict[str,&nbsp;torch.Tensor]`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;State&nbsp;dict&nbsp;of&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;`unet`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;text_encoder_lora_layers&nbsp;(`Dict[str,&nbsp;torch.nn.Module]`&nbsp;or&nbsp;`Dict[str,&nbsp;torch.Tensor]`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;State&nbsp;dict&nbsp;of&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;`text_encoder`.&nbsp;Must&nbsp;explicitly&nbsp;pass&nbsp;the&nbsp;text<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoder&nbsp;LoRA&nbsp;state&nbsp;dict&nbsp;because&nbsp;it&nbsp;comes&nbsp;from&nbsp;🤗&nbsp;Transformers.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;text_encoder_2_lora_layers&nbsp;(`Dict[str,&nbsp;torch.nn.Module]`&nbsp;or&nbsp;`Dict[str,&nbsp;torch.Tensor]`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;State&nbsp;dict&nbsp;of&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;`text_encoder_2`.&nbsp;Must&nbsp;explicitly&nbsp;pass&nbsp;the&nbsp;text<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoder&nbsp;LoRA&nbsp;state&nbsp;dict&nbsp;because&nbsp;it&nbsp;comes&nbsp;from&nbsp;🤗&nbsp;Transformers.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;is_main_process&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`True`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;the&nbsp;process&nbsp;calling&nbsp;this&nbsp;is&nbsp;the&nbsp;main&nbsp;process&nbsp;or&nbsp;not.&nbsp;Useful&nbsp;during&nbsp;distributed&nbsp;training&nbsp;and&nbsp;you<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;need&nbsp;to&nbsp;call&nbsp;this&nbsp;function&nbsp;on&nbsp;all&nbsp;processes.&nbsp;In&nbsp;this&nbsp;case,&nbsp;set&nbsp;`is_main_process=True`&nbsp;only&nbsp;on&nbsp;the&nbsp;main<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;process&nbsp;to&nbsp;avoid&nbsp;race&nbsp;conditions.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;save_function&nbsp;(`Callable`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;function&nbsp;to&nbsp;use&nbsp;to&nbsp;save&nbsp;the&nbsp;state&nbsp;dictionary.&nbsp;Useful&nbsp;during&nbsp;distributed&nbsp;training&nbsp;when&nbsp;you&nbsp;need&nbsp;to<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replace&nbsp;`torch.save`&nbsp;with&nbsp;another&nbsp;method.&nbsp;Can&nbsp;be&nbsp;configured&nbsp;with&nbsp;the&nbsp;environment&nbsp;variable<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`DIFFUSERS_SAVE_MODE`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;safe_serialization&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`True`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;to&nbsp;save&nbsp;the&nbsp;model&nbsp;using&nbsp;`safetensors`&nbsp;or&nbsp;the&nbsp;traditional&nbsp;PyTorch&nbsp;way&nbsp;with&nbsp;`pickle`.</tt></dd></dl>
 
 <hr>
-Static methods inherited from <a href="diffusers.loaders.lora.html#LoraLoaderMixin">diffusers.loaders.lora.LoraLoaderMixin</a>:<br>
+Data and other attributes inherited from <a href="diffusers.loaders.lora_pipeline.html#StableDiffusionXLLoraLoaderMixin">diffusers.loaders.lora_pipeline.StableDiffusionXLLoraLoaderMixin</a>:<br>
+<dl><dt><strong>text_encoder_name</strong> = 'text_encoder'</dl>
+
+<dl><dt><strong>unet_name</strong> = 'unet'</dl>
+
+<hr>
+Methods inherited from <a href="diffusers.loaders.lora_base.html#LoraBaseMixin">diffusers.loaders.lora_base.LoraBaseMixin</a>:<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-delete_adapters"><strong>delete_adapters</strong></a>(self, adapter_names: Union[List[str], str])</dt><dd><tt>Args:<br>
+Deletes&nbsp;the&nbsp;LoRA&nbsp;layers&nbsp;of&nbsp;`adapter_name`&nbsp;for&nbsp;the&nbsp;unet&nbsp;and&nbsp;text-encoder(s).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;adapter_names&nbsp;(`Union[List[str],&nbsp;str]`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;names&nbsp;of&nbsp;the&nbsp;adapter&nbsp;to&nbsp;delete.&nbsp;Can&nbsp;be&nbsp;a&nbsp;single&nbsp;string&nbsp;or&nbsp;a&nbsp;list&nbsp;of&nbsp;strings</tt></dd></dl>
+
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-disable_lora"><strong>disable_lora</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-enable_lora"><strong>enable_lora</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-get_active_adapters"><strong>get_active_adapters</strong></a>(self) -&gt; List[str]</dt><dd><tt>Gets&nbsp;the&nbsp;list&nbsp;of&nbsp;the&nbsp;current&nbsp;active&nbsp;adapters.<br>
+&nbsp;<br>
+Example:<br>
+&nbsp;<br>
+```python<br>
+from&nbsp;diffusers&nbsp;import&nbsp;DiffusionPipeline<br>
+&nbsp;<br>
+pipeline&nbsp;=&nbsp;DiffusionPipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-from_pretrained">from_pretrained</a>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"stabilityai/stable-diffusion-xl-base-1.0",<br>
+).<a href="#MaskedStableDiffusionXLImg2ImgPipeline-to">to</a>("cuda")<br>
+pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-load_lora_weights">load_lora_weights</a>("CiroN2022/toy-face",&nbsp;weight_name="toy_face_sdxl.safetensors",&nbsp;adapter_name="toy")<br>
+pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-get_active_adapters">get_active_adapters</a>()<br>
+```</tt></dd></dl>
+
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-get_list_adapters"><strong>get_list_adapters</strong></a>(self) -&gt; Dict[str, List[str]]</dt><dd><tt>Gets&nbsp;the&nbsp;current&nbsp;list&nbsp;of&nbsp;all&nbsp;available&nbsp;adapters&nbsp;in&nbsp;the&nbsp;pipeline.</tt></dd></dl>
+
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-set_adapters"><strong>set_adapters</strong></a>(self, adapter_names: Union[List[str], str], adapter_weights: Union[float, Dict, List[float], List[Dict], NoneType] = None)</dt></dl>
+
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-set_lora_device"><strong>set_lora_device</strong></a>(self, adapter_names: List[str], device: Union[torch.device, str, int]) -&gt; None</dt><dd><tt>Moves&nbsp;the&nbsp;LoRAs&nbsp;listed&nbsp;in&nbsp;`adapter_names`&nbsp;to&nbsp;a&nbsp;target&nbsp;device.&nbsp;Useful&nbsp;for&nbsp;offloading&nbsp;the&nbsp;LoRA&nbsp;to&nbsp;the&nbsp;CPU&nbsp;in&nbsp;case<br>
+you&nbsp;want&nbsp;to&nbsp;load&nbsp;multiple&nbsp;adapters&nbsp;and&nbsp;free&nbsp;some&nbsp;GPU&nbsp;memory.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;adapter_names&nbsp;(`List[str]`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;List&nbsp;of&nbsp;adapters&nbsp;to&nbsp;send&nbsp;device&nbsp;to.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;device&nbsp;(`Union[torch.device,&nbsp;str,&nbsp;int]`):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Device&nbsp;to&nbsp;send&nbsp;the&nbsp;adapters&nbsp;to.&nbsp;Can&nbsp;be&nbsp;either&nbsp;a&nbsp;torch&nbsp;device,&nbsp;a&nbsp;str&nbsp;or&nbsp;an&nbsp;integer.</tt></dd></dl>
+
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-unload_lora_weights"><strong>unload_lora_weights</strong></a>(self)</dt><dd><tt>Unloads&nbsp;the&nbsp;LoRA&nbsp;parameters.<br>
+&nbsp;<br>
+Examples:<br>
+&nbsp;<br>
+```python<br>
+&gt;&gt;&gt;&nbsp;#&nbsp;Assuming&nbsp;`pipeline`&nbsp;is&nbsp;already&nbsp;loaded&nbsp;with&nbsp;the&nbsp;LoRA&nbsp;parameters.<br>
+&gt;&gt;&gt;&nbsp;pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-unload_lora_weights">unload_lora_weights</a>()<br>
+&gt;&gt;&gt;&nbsp;...<br>
+```</tt></dd></dl>
+
+<hr>
+Static methods inherited from <a href="diffusers.loaders.lora_base.html#LoraBaseMixin">diffusers.loaders.lora_base.LoraBaseMixin</a>:<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-pack_weights"><strong>pack_weights</strong></a>(layers, prefix)</dt></dl>
+
 <dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-write_lora_layers"><strong>write_lora_layers</strong></a>(state_dict: Dict[str, torch.Tensor], save_directory: str, is_main_process: bool, weight_name: str, save_function: Callable, safe_serialization: bool)</dt></dl>
 
 <hr>
-Readonly properties inherited from <a href="diffusers.loaders.lora.html#LoraLoaderMixin">diffusers.loaders.lora.LoraLoaderMixin</a>:<br>
+Readonly properties inherited from <a href="diffusers.loaders.lora_base.html#LoraBaseMixin">diffusers.loaders.lora_base.LoraBaseMixin</a>:<br>
 <dl><dt><strong>lora_scale</strong></dt>
 </dl>
 <hr>
-Data and other attributes inherited from <a href="diffusers.loaders.lora.html#LoraLoaderMixin">diffusers.loaders.lora.LoraLoaderMixin</a>:<br>
+Data and other attributes inherited from <a href="diffusers.loaders.lora_base.html#LoraBaseMixin">diffusers.loaders.lora_base.LoraBaseMixin</a>:<br>
 <dl><dt><strong>num_fused_loras</strong> = 0</dl>
-
-<dl><dt><strong>text_encoder_name</strong> = 'text_encoder'</dl>
-
-<dl><dt><strong>transformer_name</strong> = 'transformer'</dl>
-
-<dl><dt><strong>unet_name</strong> = 'unet'</dl>
 
 <hr>
 Methods inherited from <a href="diffusers.loaders.ip_adapter.html#IPAdapterMixin">diffusers.loaders.ip_adapter.IPAdapterMixin</a>:<br>
@@ -1529,9 +1443,7 @@ Methods inherited from <a href="diffusers.loaders.ip_adapter.html#IPAdapterMixin
 &nbsp;&nbsp;&nbsp;&nbsp;force_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;force&nbsp;the&nbsp;(re-)download&nbsp;of&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files,&nbsp;overriding&nbsp;the<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cached&nbsp;versions&nbsp;if&nbsp;they&nbsp;exist.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resume_download&nbsp;(`bool`,&nbsp;*optional*,&nbsp;defaults&nbsp;to&nbsp;`False`):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether&nbsp;or&nbsp;not&nbsp;to&nbsp;resume&nbsp;downloading&nbsp;the&nbsp;model&nbsp;weights&nbsp;and&nbsp;configuration&nbsp;files.&nbsp;If&nbsp;set&nbsp;to&nbsp;`False`,&nbsp;any<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;incompletely&nbsp;downloaded&nbsp;files&nbsp;are&nbsp;deleted.<br>
+&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;proxies&nbsp;(`Dict[str,&nbsp;str]`,&nbsp;*optional*):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;dictionary&nbsp;of&nbsp;proxy&nbsp;servers&nbsp;to&nbsp;use&nbsp;by&nbsp;protocol&nbsp;or&nbsp;endpoint,&nbsp;for&nbsp;example,&nbsp;`{'http':&nbsp;'foo.bar:3128',<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'<a href="http://hostname">http://hostname</a>':&nbsp;'foo.bar:4012'}`.&nbsp;The&nbsp;proxies&nbsp;are&nbsp;used&nbsp;on&nbsp;each&nbsp;request.<br>
@@ -1550,12 +1462,32 @@ Methods inherited from <a href="diffusers.loaders.ip_adapter.html#IPAdapterMixin
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Only&nbsp;supported&nbsp;for&nbsp;PyTorch&nbsp;&gt;=&nbsp;1.9.0.&nbsp;If&nbsp;you&nbsp;are&nbsp;using&nbsp;an&nbsp;older&nbsp;version&nbsp;of&nbsp;PyTorch,&nbsp;setting&nbsp;this<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;argument&nbsp;to&nbsp;`True`&nbsp;will&nbsp;raise&nbsp;an&nbsp;error.</tt></dd></dl>
 
-<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-set_ip_adapter_scale"><strong>set_ip_adapter_scale</strong></a>(self, scale)</dt><dd><tt>Sets&nbsp;the&nbsp;conditioning&nbsp;scale&nbsp;between&nbsp;text&nbsp;and&nbsp;image.<br>
+<dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-set_ip_adapter_scale"><strong>set_ip_adapter_scale</strong></a>(self, scale)</dt><dd><tt>Set&nbsp;IP-Adapter&nbsp;scales&nbsp;per-transformer&nbsp;block.&nbsp;Input&nbsp;`scale`&nbsp;could&nbsp;be&nbsp;a&nbsp;single&nbsp;config&nbsp;or&nbsp;a&nbsp;list&nbsp;of&nbsp;configs&nbsp;for<br>
+granular&nbsp;control&nbsp;over&nbsp;each&nbsp;IP-Adapter&nbsp;behavior.&nbsp;A&nbsp;config&nbsp;can&nbsp;be&nbsp;a&nbsp;float&nbsp;or&nbsp;a&nbsp;dictionary.<br>
 &nbsp;<br>
 Example:<br>
 &nbsp;<br>
 ```py<br>
-pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-set_ip_adapter_scale">set_ip_adapter_scale</a>(0.5)<br>
+#&nbsp;To&nbsp;use&nbsp;original&nbsp;IP-Adapter<br>
+scale&nbsp;=&nbsp;1.0<br>
+pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-set_ip_adapter_scale">set_ip_adapter_scale</a>(scale)<br>
+&nbsp;<br>
+#&nbsp;To&nbsp;use&nbsp;style&nbsp;block&nbsp;only<br>
+scale&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"up":&nbsp;{"block_0":&nbsp;[0.0,&nbsp;1.0,&nbsp;0.0]},<br>
+}<br>
+pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-set_ip_adapter_scale">set_ip_adapter_scale</a>(scale)<br>
+&nbsp;<br>
+#&nbsp;To&nbsp;use&nbsp;style+layout&nbsp;blocks<br>
+scale&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"down":&nbsp;{"block_2":&nbsp;[0.0,&nbsp;1.0]},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"up":&nbsp;{"block_0":&nbsp;[0.0,&nbsp;1.0,&nbsp;0.0]},<br>
+}<br>
+pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-set_ip_adapter_scale">set_ip_adapter_scale</a>(scale)<br>
+&nbsp;<br>
+#&nbsp;To&nbsp;use&nbsp;style&nbsp;and&nbsp;layout&nbsp;from&nbsp;2&nbsp;reference&nbsp;images<br>
+scales&nbsp;=&nbsp;[{"down":&nbsp;{"block_2":&nbsp;[0.0,&nbsp;1.0]}},&nbsp;{"up":&nbsp;{"block_0":&nbsp;[0.0,&nbsp;1.0,&nbsp;0.0]}}]<br>
+pipeline.<a href="#MaskedStableDiffusionXLImg2ImgPipeline-set_ip_adapter_scale">set_ip_adapter_scale</a>(scales)<br>
 ```</tt></dd></dl>
 
 <dl><dt><a name="MaskedStableDiffusionXLImg2ImgPipeline-unload_ip_adapter"><strong>unload_ip_adapter</strong></a>(self)</dt><dd><tt>Unloads&nbsp;the&nbsp;IP&nbsp;Adapter&nbsp;weights<br>
@@ -1580,7 +1512,7 @@ Examples:<br>
 <strong>Dict</strong> = typing.Dict<br>
 <strong>List</strong> = typing.List<br>
 <strong>Optional</strong> = typing.Optional<br>
-<strong>PipelineImageInput</strong> = typing.Union[PIL.Image.Image, numpy.ndarray, tor...t[numpy.ndarray], typing.List[torch.FloatTensor]]<br>
+<strong>PipelineImageInput</strong> = typing.Union[PIL.Image.Image, numpy.ndarray, tor...g.List[numpy.ndarray], typing.List[torch.Tensor]]<br>
 <strong>Tuple</strong> = typing.Tuple<br>
 <strong>Union</strong> = typing.Union<br>
 <strong>XLA_AVAILABLE</strong> = False<br>

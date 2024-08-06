@@ -17,9 +17,11 @@
 <font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="time.html">time</a><br>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="concurrent.html">concurrent</a><br>
+</td><td width="25%" valign=top><a href="random.html">random</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
 </td><td width="25%" valign=top><a href="torch.html">torch</a><br>
-</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+</td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -41,7 +43,7 @@
 <font color="#000000" face="helvetica, arial"><a name="ServiceThread">class <strong>ServiceThread</strong></a>(<a href="multigen.worker_base.html#ServiceThreadBase">multigen.worker_base.ServiceThreadBase</a>)</font></td></tr>
     
 <tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt><a href="#ServiceThread">ServiceThread</a>(cfg_file)<br>
+<td colspan=2><tt><a href="#ServiceThread">ServiceThread</a>(*args,&nbsp;**kwargs)<br>
 &nbsp;<br>
 <br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
@@ -53,18 +55,7 @@
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="ServiceThread-get_pipeline"><strong>get_pipeline</strong></a>(self, pipe_name, model_id, cnet=None, xl=False)</dt></dl>
-
-<dl><dt><a name="ServiceThread-run"><strong>run</strong></a>(self)</dt><dd><tt>Method&nbsp;representing&nbsp;the&nbsp;thread's&nbsp;activity.<br>
-&nbsp;<br>
-You&nbsp;may&nbsp;override&nbsp;this&nbsp;method&nbsp;in&nbsp;a&nbsp;subclass.&nbsp;The&nbsp;standard&nbsp;<a href="#ServiceThread-run">run</a>()&nbsp;method<br>
-invokes&nbsp;the&nbsp;callable&nbsp;object&nbsp;passed&nbsp;to&nbsp;the&nbsp;object's&nbsp;constructor&nbsp;as&nbsp;the<br>
-target&nbsp;argument,&nbsp;if&nbsp;any,&nbsp;with&nbsp;sequential&nbsp;and&nbsp;keyword&nbsp;arguments&nbsp;taken<br>
-from&nbsp;the&nbsp;args&nbsp;and&nbsp;kwargs&nbsp;arguments,&nbsp;respectively.</tt></dd></dl>
-
-<hr>
-Methods inherited from <a href="multigen.worker_base.html#ServiceThreadBase">multigen.worker_base.ServiceThreadBase</a>:<br>
-<dl><dt><a name="ServiceThread-__init__"><strong>__init__</strong></a>(self, cfg_file)</dt><dd><tt>This&nbsp;constructor&nbsp;should&nbsp;always&nbsp;be&nbsp;called&nbsp;with&nbsp;keyword&nbsp;arguments.&nbsp;Arguments&nbsp;are:<br>
+<dl><dt><a name="ServiceThread-__init__"><strong>__init__</strong></a>(self, *args, **kwargs)</dt><dd><tt>This&nbsp;constructor&nbsp;should&nbsp;always&nbsp;be&nbsp;called&nbsp;with&nbsp;keyword&nbsp;arguments.&nbsp;Arguments&nbsp;are:<br>
 &nbsp;<br>
 *group*&nbsp;should&nbsp;be&nbsp;None;&nbsp;reserved&nbsp;for&nbsp;future&nbsp;extension&nbsp;when&nbsp;a&nbsp;ThreadGroup<br>
 class&nbsp;is&nbsp;implemented.<br>
@@ -84,6 +75,19 @@ If&nbsp;a&nbsp;subclass&nbsp;overrides&nbsp;the&nbsp;constructor,&nbsp;it&nbsp;m
 the&nbsp;base&nbsp;class&nbsp;constructor&nbsp;(Thread.<a href="#ServiceThread-__init__">__init__</a>())&nbsp;before&nbsp;doing&nbsp;anything<br>
 else&nbsp;to&nbsp;the&nbsp;thread.</tt></dd></dl>
 
+<dl><dt><a name="ServiceThread-get_pipeline"><strong>get_pipeline</strong></a>(self, pipe_name, model_id, cnet=None, xl=False)</dt></dl>
+
+<dl><dt><a name="ServiceThread-run"><strong>run</strong></a>(self)</dt><dd><tt>Method&nbsp;representing&nbsp;the&nbsp;thread's&nbsp;activity.<br>
+&nbsp;<br>
+You&nbsp;may&nbsp;override&nbsp;this&nbsp;method&nbsp;in&nbsp;a&nbsp;subclass.&nbsp;The&nbsp;standard&nbsp;<a href="#ServiceThread-run">run</a>()&nbsp;method<br>
+invokes&nbsp;the&nbsp;callable&nbsp;object&nbsp;passed&nbsp;to&nbsp;the&nbsp;object's&nbsp;constructor&nbsp;as&nbsp;the<br>
+target&nbsp;argument,&nbsp;if&nbsp;any,&nbsp;with&nbsp;sequential&nbsp;and&nbsp;keyword&nbsp;arguments&nbsp;taken<br>
+from&nbsp;the&nbsp;args&nbsp;and&nbsp;kwargs&nbsp;arguments,&nbsp;respectively.</tt></dd></dl>
+
+<dl><dt><a name="ServiceThread-worker"><strong>worker</strong></a>(self, data)</dt></dl>
+
+<hr>
+Methods inherited from <a href="multigen.worker_base.html#ServiceThreadBase">multigen.worker_base.ServiceThreadBase</a>:<br>
 <dl><dt><a name="ServiceThread-close_session"><strong>close_session</strong></a>(self, session_id)</dt></dl>
 
 <dl><dt><a name="ServiceThread-get_image_count"><strong>get_image_count</strong></a>(self, session_id)</dt></dl>
