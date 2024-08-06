@@ -113,7 +113,8 @@ class ServiceThread(ServiceThreadBase):
             device = pipe.pipe.device
             self.logger.debug(f'running job on {device}')
             if device.type == 'cuda':
-                self._gpu_jobs[device.index] = model_id
+                with self._lock:
+                    self._gpu_jobs[device.index] = model_id
             class_name = str(pipe.__class__)
             self.logger.debug(f'got pipeline {class_name}')
 

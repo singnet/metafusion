@@ -370,7 +370,7 @@ class Im2ImPipe(BasePipe):
         super().__init__(model_id=model_id, pipe=pipe, **args)
         self._input_image = None
 
-    def setup(self, fimage, image=None, strength=0.75, gscale=7.5, scale=None, **args):
+    def setup(self, fimage, image=None, strength=0.75, guidance_scale=7.5, scale=None, **args):
         """
         Setup pipeline for generation.
 
@@ -380,7 +380,7 @@ class Im2ImPipe(BasePipe):
             strength (float, *optional*):
                 Strength image modification. Defaults to 0.75. A lower strength values keep result close to the input image.
                  value of 1 means input image more or less ignored.
-            gscale (float, *optional*): Guidance scale for the model. Defaults to 7.5.
+            guidance_scale (float, *optional*): Guidance scale for the model. Defaults to 7.5.
             scale (list or float, *optional*): Scale factor for the input image. Defaults to None.
             **args: Additional arguments passed to BasePipe setup method.
         """
@@ -390,7 +390,7 @@ class Im2ImPipe(BasePipe):
         self._input_image = self.scale_image(self._input_image, scale)
         self.pipe_params.update({
             "strength": strength,
-            "guidance_scale": gscale
+            "guidance_scale": guidance_scale
         })
 
     def scale_image(self, image, scale):
@@ -458,7 +458,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
     _classxl = MaskedStableDiffusionXLImg2ImgPipeline
     _autopipeline = DiffusionPipeline
 
-    def __init__(self, *args, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, lpw=False, **kwargs):
+    def __init__(self, *args, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, lpw=False, model_type=None, **kwargs):
         """
         Initialize a MaskedIm2ImPipe instance.
 
@@ -467,7 +467,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
             pipe (StableDiffusionImg2ImgPipeline, *optional*): The underlying pipeline. Defaults to None.
             **kwargs: Additional keyword arguments passed to Im2ImPipe constructor.
         """
-        super().__init__(*args, pipe=pipe, lpw=lpw, **kwargs)
+        super().__init__(*args, pipe=pipe, lpw=lpw, model_type=model_type, **kwargs)
         # convert loaded pipeline if necessary
         if not isinstance(self.pipe, (self._class, self._classxl)):
             self.pipe = self._from_pipe(self.pipe, **kwargs)
@@ -718,7 +718,6 @@ class Cond2ImPipe(BasePipe):
             "height": image.size[1] if height is None else height,
             "controlnet_conditioning_scale": cscales,
             "guess_mode": guess_mode,
-            "num_inference_steps": 20
         })
 
     def get_default_cond_scales(self):

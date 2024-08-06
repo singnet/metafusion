@@ -22,29 +22,31 @@ from transformers import (
 
 from diffusers import DiffusionPipeline, StableDiffusionXLPipeline
 from diffusers.image_processor import PipelineImageInput, VaeImageProcessor
-from diffusers.loaders import StableDiffusionXLLoraLoaderMixin, FromSingleFileMixin, IPAdapterMixin, LoraLoaderMixin, TextualInversionLoaderMixin
+from diffusers.loaders import (
+    FromSingleFileMixin,
+    IPAdapterMixin,
+    StableDiffusionXLLoraLoaderMixin,
+    TextualInversionLoaderMixin,
+)
 from diffusers.models import AutoencoderKL, ImageProjection, UNet2DConditionModel
 from diffusers.models.attention_processor import AttnProcessor2_0, XFormersAttnProcessor
+from diffusers.models.lora import adjust_lora_scale_text_encoder
 from diffusers.pipelines.pipeline_utils import StableDiffusionMixin
 from diffusers.pipelines.stable_diffusion_xl.pipeline_output import StableDiffusionXLPipelineOutput
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers.utils import (
+    USE_PEFT_BACKEND,
     deprecate,
     is_accelerate_available,
     is_accelerate_version,
     is_invisible_watermark_available,
     logging,
     replace_example_docstring,
-)
-from diffusers.utils.torch_utils import randn_tensor
-from diffusers.utils import (
-    USE_PEFT_BACKEND,
-    deprecate,
-    logging,
-    replace_example_docstring,
     scale_lora_layers,
     unscale_lora_layers,
 )
+from diffusers.utils.torch_utils import randn_tensor
+
 
 if is_invisible_watermark_available():
     from diffusers.pipelines.stable_diffusion_xl.watermark import StableDiffusionXLWatermarker
@@ -263,7 +265,7 @@ def get_weighted_text_embeddings_sdxl(
     num_images_per_prompt: int = 1,
     device: Optional[torch.device] = None,
     clip_skip: Optional[int] = None,
-    lora_scale: Optional[int] = None
+    lora_scale: Optional[int] = None,
 ):
     """
     This function can process long prompt with weights, no length limitation
@@ -580,7 +582,7 @@ class SDXLLongPromptWeightingPipeline(
     StableDiffusionMixin,
     FromSingleFileMixin,
     IPAdapterMixin,
-    LoraLoaderMixin,
+    StableDiffusionXLLoraLoaderMixin,
     TextualInversionLoaderMixin,
 ):
     r"""
@@ -592,8 +594,8 @@ class SDXLLongPromptWeightingPipeline(
     The pipeline also inherits the following loading methods:
         - [`~loaders.FromSingleFileMixin.from_single_file`] for loading `.ckpt` files
         - [`~loaders.IPAdapterMixin.load_ip_adapter`] for loading IP Adapters
-        - [`~loaders.LoraLoaderMixin.load_lora_weights`] for loading LoRA weights
-        - [`~loaders.LoraLoaderMixin.save_lora_weights`] for saving LoRA weights
+        - [`~loaders.StableDiffusionXLLoraLoaderMixin.load_lora_weights`] for loading LoRA weights
+        - [`~loaders.StableDiffusionXLLoraLoaderMixin.save_lora_weights`] for saving LoRA weights
         - [`~loaders.TextualInversionLoaderMixin.load_textual_inversion`] for loading textual inversion embeddings
 
     Args:
@@ -774,7 +776,7 @@ class SDXLLongPromptWeightingPipeline(
 
         # set lora scale so that monkey patched LoRA
         # function of text encoder can correctly access it
-        if lora_scale is not None and isinstance(self, LoraLoaderMixin):
+        if lora_scale is not None and isinstance(self, StableDiffusionXLLoraLoaderMixin):
             self._lora_scale = lora_scale
 
         if prompt is not None and isinstance(prompt, str):
@@ -1643,7 +1645,9 @@ class SDXLLongPromptWeightingPipeline(
                 image_embeds = torch.cat([negative_image_embeds, image_embeds])
 
         # 3. Encode input prompt
-        (self.cross_attention_kwargs.get("scale", None) if self.cross_attention_kwargs is not None else None)
+        lora_scale = (
+            self._cross_attention_kwargs.get("scale", None) if self._cross_attention_kwargs is not None else None
+        )
 
         negative_prompt = negative_prompt if negative_prompt is not None else ""
 
@@ -1658,6 +1662,7 @@ class SDXLLongPromptWeightingPipeline(
             neg_prompt=negative_prompt,
             num_images_per_prompt=num_images_per_prompt,
             clip_skip=clip_skip,
+            lora_scale=lora_scale,
         )
         dtype = prompt_embeds.dtype
 
