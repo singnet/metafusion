@@ -6,6 +6,15 @@
 Pipes classes implement different ways to generate 
 or process images using diffusion models.
 
+
+All Pipe classes have two methods: *setup* and *gen*.
+
+*setup*'s purpuse is define parameters of the pipeline for image generation. Pipelines that take an image as an 
+input perform image preprocessing in *setup*. Setup's arguments are stored in the pipeline and used whenever *gen* method is used.
+
+*gen* takes as an input parameters are not stored inside the pipeline. All the pipelines take a dictionary as an input.
+Expected parameters are prompt(str), generator (torch.Generator), negative_prompt (str).
+
 **Prompt2ImPipe** is a pipe that generates an image from text prompt.
 
 
@@ -16,6 +25,20 @@ image = pipe.gen({'prompt': 'bio-tech lab with computers and exotic flowers, art
 image.save('bio.png')
 ```
 
+*setup* parameters
+
+width - width of image to generate  
+heigth - height of image to generate  
+guidance_scale - strength of the prompt influence on generation process.  
+steps - The number of denoising steps. More denoising steps usually lead to a higher quality image at the expense of slower inference. Default value is 50.  
+clip_skip - Number of layers to be skipped from CLIP while computing the prompt embeddings. Skipping some layers gives less precise representation of the prompt. Default value is 0.  
+
+Optimal values of guidance_scale and steps vary a lot between different checkpoints.
+
+
+*gen* parameters
+
+
 ***Im2ImPipe** is a pipe that generates an image from another image.
 
 ```
@@ -25,20 +48,39 @@ img = pipe.gen({'prompt': 'biolab, anime style drawing, green colors'})
 img.save('bio1.png')
 ```
 
+*setup* parameters
+
+fimage - File path to the input image.  
+image - Input image. Can be used instead of fimage.  
+strength - Strength of image modification. Defaults to 0.75. A lower strength values keep result close to the input image. value of 1 means input image more or less ignored.  
+scale -  The scale factor for resizing of the input image. The output image will have dimentions (height * scale, width * scale) Defaults to None.  
+guidance_scale, steps, clip_skip - same as in Prompt2ImPipe  
+
+
 **Cond2ImPipe** is a pipe that generates 
-an image from another image plus conditioning 
-image e.g. image after canny edge detection etc.  
+an image from a special conditioning 
+image e.g.image after canny edge detection, or etc.  
 Conditioning image is processed internally with controlnet and  
 uses StableDiffusion(XL)ControlNetPipeline
 
 Models are expected to be in ./models-cn/ for StableDiffusion 
 and in ./models-cn-xl/ for StableDiffusionXL
 
-**CIm2ImPipe** is similiar to Cond2ImPipe.  
+
+**CIm2ImPipe** is a subclass of Cond2ImPipe.  
+
 The difference is that the conditional image is not
 taken as input but is obtained from the input image, which
-should be processed, and the image processor 
-depends on the conditioning type.
+is processed internally by the image processor. The image processor   
+depends on the conditioning type specified in the constructor.
+
+
+
+*setup* parameters
+
+fimage, image - same as in Im2ImPipe
+cscales - strength of control image influence  
+width, height, steps, clip_skip, guidance_scale - same as in Prompt2ImPipe
 
 ```
 model_id = 'runwayml/stable-diffusion-v1-5'
@@ -81,6 +123,15 @@ img = pipe.gen({'prompt': prompt, 'seed':84958344})
 img.save('inpaint1.png')
 ```
 
+*setup* parameters
+
+original_image - image without mask
+image_painted - modified version of original_image, this parameter should be skipped if mask is passed.  
+mask - The mask. Defaults to None. If None it will be computed from the difference 
+between original_image and image_painted, should be skipped if image_painted is passed  
+blur - The blur radius for the mask to apply for generation process.  
+blur_compose - The blur radius for composing the original and generated images.  
+scale - The scale factor for resizing of the input image. The output image will have dimentions (height * scale, width * scale)
 
 ## metafusion service
 
