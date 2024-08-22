@@ -24,9 +24,11 @@ from transformers import CLIPProcessor, CLIPTextModel
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 # from diffusers import StableDiffusionKDiffusionPipeline
 
+
 class ModelType(Enum):
     SD = 1
     SDXL = 2
+    FLUX = 3
 
 
 def get_diffusion_scheduler_names():
@@ -68,7 +70,8 @@ class BasePipe:
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]] = None,
                  pipe: Optional[DiffusionPipeline] = None,
-                 model_type: Optional[ModelType] = None, device=None, lpw=False, **args):
+                 model_type: Optional[ModelType] = None, device=None,
+                 offload_device:int=None, lpw=False, **args):
         """
         Constructor
 
@@ -82,6 +85,10 @@ class BasePipe:
                 if provided the model_id won't be used for loading.
             model_type (ModelType, *optional*):
                 A flag to selected between SD or SDXL if neither sd_pipe_class nor pipe is given
+            device (torch.device, *optional*):
+                a device where checkpoint will be loaded
+            offload_device (int, *optional*):
+                a device to use for 'enable_sequential_cpu_offload'
             lpw (bool, *optional*):
                 A flag to enable of disable long-prompt weighting
             **args:
@@ -104,15 +111,17 @@ class BasePipe:
                 args['torch_dtype'] = torch.float16
         if self.pipe is None:
             self.pipe = self._load_pipeline(sd_pipe_class, model_type, args)
-        self._initialize_pipe(device)
-        self.lpw = lpw
-        self._loras = []
+
         mt = self._get_model_type()
         if self.model_type is None:
             self.model_type = mt
         else:
             if mt != model_type:
                 raise RuntimeError(f"passed model type {self.model_type} doesn't match actual type {mt}")
+
+        self._initialize_pipe(device, offload_device)
+        self.lpw = lpw
+        self._loras = []
 
     def _get_model_type(self):
         module = self.pipe.__class__.__module__
@@ -124,10 +133,12 @@ class BasePipe:
             return ModelType.SDXL
         elif module.startswith('diffusers.pipelines.stable_diffusion.'):
             return ModelType.SD
+        elif module.startswith('diffusers.pipelines.flux.pipeline_flux'):
+            return ModelType.FLUX
         else:
             raise RuntimeError("unsuported model type {self.pipe.__class__}")
 
-    def _initialize_pipe(self, device):
+    def _initialize_pipe(self, device, offload_device):
         # sometimes text encoder is on a different device
         # if self.pipe.device != device:
         self.pipe.to(device)
@@ -136,11 +147,15 @@ class BasePipe:
         self.pipe.vae.enable_tiling()
         # --- the best one and seems to be enough ---
         # self.pipe.enable_sequential_cpu_offload()
-        try:
-            import xformers
-            self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
-        except ImportError as e:
-            logging.warning("xformers not found, can't use efficient attention")
+        if self.model_type == ModelType.FLUX:
+            if offload_device is not None:
+                self.pipe.enable_sequential_cpu_offload(offload_device)
+        else:
+            try:
+                import xformers
+                self.pipe.enable_xformers_memory_efficient_attention() # attention_op=MemoryEfficientAttentionFlashAttentionOp)
+            except ImportError as e:
+                logging.warning("xformers not found, can't use efficient attention")
 
     def _load_pipeline(self, sd_pipe_class, model_type, args):
         if sd_pipe_class is None:
@@ -275,6 +290,11 @@ class BasePipe:
     def prepare_inputs(self, inputs):
         kwargs = self.pipe_params.copy()
         kwargs.update(inputs)
+        if self.model_type == ModelType.FLUX:
+            if 'clip_skip' in kwargs:
+                kwargs.pop('clip_skip')
+            if 'negative_prompt' in kwargs:
+                kwargs.pop('negative_prompt')
         if self.lpw:
             lora_scale = kwargs.get('cross_attention_kwargs', dict()).get("scale", None)
             if self.model_type == ModelType.SDXL:
@@ -304,6 +324,8 @@ class BasePipe:
                     lora_scale=lora_scale)
                 kwargs['prompt_embeds'] = prompt_embeds
                 kwargs['negative_prompt_embeds'] = negative_prompt_embeds
+            elif self.model_type == ModelType.FLUX:
+                pass
             else:
                 raise RuntimeError(f"unexpected model type is used with lpw {self.model_type}")
         # allow for scheduler overwrite
