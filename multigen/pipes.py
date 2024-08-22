@@ -16,6 +16,7 @@ from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, D
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler, StableDiffusionXLControlNetPipeline
 from diffusers import StableDiffusionControlNetInpaintPipeline, StableDiffusionXLControlNetInpaintPipeline, DDIMScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
+from diffusers import StableDiffusionXLControlNetImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline
 
 from .pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
 from .pipelines.masked_stable_diffusion_xl_img2img import MaskedStableDiffusionXLImg2ImgPipeline
@@ -581,8 +582,8 @@ class MaskedIm2ImPipe(Im2ImPipe):
 
 
 class Cond2ImPipe(BasePipe):
-    _class = StableDiffusionControlNetPipeline
-    _classxl = StableDiffusionXLControlNetPipeline
+    _class = StableDiffusionControlNetImg2ImgPipeline
+    _classxl = StableDiffusionXLControlNetImg2ImgPipeline
     _autopipeline = DiffusionPipeline
 
     # TODO: set path
@@ -708,7 +709,7 @@ class Cond2ImPipe(BasePipe):
         return cpath
 
     def setup(self, fimage, width=None, height=None,
-              image=None, cscales=None, guess_mode=False, **args):
+              image=None, cscales=None, guess_mode=False, strength=1, **args):
         """
         Set up the pipeline with the given parameters.
 
@@ -723,9 +724,11 @@ class Cond2ImPipe(BasePipe):
                 The input image. Defaults to None. fimage should be None if this argument is provided.
             cscales (list, optional):
                 The list of conditioning scales. Defaults to None.
-            guess_mode (bool, optional):
+            guess_mode (bool, *optional*):
                 Whether to use guess mode. Defaults to False.
                 it enables image generation without text prompt.
+            strength (float, *optional*):
+                Strength image modification. Defaults to 1. A lower strength values keep result close to the input image. value of 1 means input image more or less ignored.
             **args: Additional arguments for the pipeline setup.
         """
         super().setup(**args)
@@ -733,6 +736,7 @@ class Cond2ImPipe(BasePipe):
         self.fname = fimage
         image = Image.open(fimage) if image is None else image
         self._condition_image = [image]
+        self._input_image = [image]
         if cscales is None:
             cscales = [self.get_default_cond_scales()[c] for c in self.ctypes]
         self.pipe_params.update({
@@ -740,6 +744,7 @@ class Cond2ImPipe(BasePipe):
             "height": image.size[1] if height is None else height,
             "controlnet_conditioning_scale": cscales,
             "guess_mode": guess_mode,
+            "strength": strength,
         })
 
     def get_default_cond_scales(self):
@@ -772,7 +777,8 @@ class Cond2ImPipe(BasePipe):
         """
         inputs = self.prepare_inputs(inputs)
         inputs.update(self.pipe_params)
-        inputs.update({"image": self._condition_image})
+        inputs.update({"image": self._input_image,
+                       "control_image": self._condition_image})
         image = self.pipe(**inputs).images[0]
         return image
 
@@ -801,24 +807,59 @@ class CIm2ImPipe(Cond2ImPipe):
                 Additional arguments passed to the Cond2ImPipe constructor.
         """
         super().__init__(model_id=model_id, pipe=pipe, ctypes=ctypes, model_type=model_type, **args)
+        self.processor = None
+        self.body_estimation = None
+        self.draw_bodypose = None
+        self.dprocessor = None
+        self.dmodel = None
+        for c in self.ctypes:
+            self.load_processor(c)
 
-        if "soft" in ctypes:
+    def load_processor(self, ctype):
+        if "soft" == ctype:
             from controlnet_aux import PidiNetDetector, HEDdetector
-            self.processor = HEDdetector.from_pretrained('lllyasviel/Annotators')
+            if self.processor is None:
+                self.processor = HEDdetector.from_pretrained('lllyasviel/Annotators')
             #processor = PidiNetDetector.from_pretrained('lllyasviel/Annotators')
-        if "pose" in ctypes:
+        if "pose" == ctype:
             from pytorch_openpose.src.body import Body
             from pytorch_openpose.src import util
-            self.body_estimation = Body('pytorch_openpose/model/body_pose_model.pth')
-            self.draw_bodypose = util.draw_bodypose
+            if self.body_estimation is None:
+                self.body_estimation = Body('pytorch_openpose/model/body_pose_model.pth')
+                self.draw_bodypose = util.draw_bodypose
             #hand_estimation = Hand('model/hand_pose_model.pth')
-        if "depth" in ctypes:
+        if "depth" == ctype:
             from transformers import DPTImageProcessor, DPTForDepthEstimation
-            self.dprocessor = DPTImageProcessor.from_pretrained("./models-other/dpt-large")
-            self.dmodel = DPTForDepthEstimation.from_pretrained("./models-other/dpt-large")
+            if self.dprocessor is None:
+                self.dprocessor = DPTImageProcessor.from_pretrained("./models-other/dpt-large")
+                self.dmodel = DPTForDepthEstimation.from_pretrained("./models-other/dpt-large")
 
-    def setup(self, fimage, width=None, height=None, image=None, cscales=None, guess_mode=False, **args):
-        super().setup(fimage, width, height, image, cscales, guess_mode, **args)
+    def setup(self, fimage, width=None, height=None, image=None,
+              cscales=None, guess_mode=False, strength=0.75, **args):
+        """
+        Set up the pipeline with the given parameters.
+
+        Args:
+            fimage (str):
+                The path to the input image file.
+            width (int, *optional*):
+                The width of the generated image. Defaults to the width of the input image.
+            height (int, *optional*):
+                The height of the generated image. Defaults to the height of the input image.
+            image (PIL.Image.Image, *optional*):
+                The input image. Defaults to None. fimage should be None if this argument is provided.
+            cscales (list, optional):
+                The list of conditioning scales. Defaults to None.
+            guess_mode (bool, *optional*):
+                Whether to use guess mode. Defaults to False.
+                it enables image generation without text prompt.
+            strength (float, *optional*):
+                Strength image modification. Defaults to 0.75. A lower strength values keep result close to the input image. value of 1 means input image more or less ignored.
+            **args: Additional arguments for the pipeline setup.
+        """
+        super().setup(fimage, width, height, image, cscales, guess_mode, strength=strength, **args)
+        if 'ctypes' in args:
+            raise RuntimeError("ctypes can be used only in constructor")
         # Additionally process the input image
         # REM: CIm2ImPipe expects only one image, which can be the base for multiple control images
         self._condition_image = self._proc_cimg(np.asarray(self._condition_image[0]))
