@@ -393,7 +393,8 @@ class Im2ImPipe(BasePipe):
         super().__init__(model_id=model_id, pipe=pipe, **args)
         self._input_image = None
 
-    def setup(self, fimage, image=None, strength=0.75, guidance_scale=7.5, scale=None, **args):
+    def setup(self, fimage, image=None, strength=0.75,
+              guidance_scale=7.5, scale=None, timestep_spacing='linspace', **args):
         """
         Setup pipeline for generation.
 
@@ -407,7 +408,7 @@ class Im2ImPipe(BasePipe):
             scale (list or float, *optional*): Scale factor for the input image. Defaults to None.
             **args: Additional arguments passed to BasePipe setup method.
         """
-        super().setup(**args)
+        super().setup(timestep_spacing=timestep_spacing, **args)
         self.fname = fimage
         self._input_image = Image.open(fimage).convert("RGB") if image is None else image
         self._input_image = self.scale_image(self._input_image, scale)
@@ -709,7 +710,8 @@ class Cond2ImPipe(BasePipe):
         return cpath
 
     def setup(self, fimage, width=None, height=None,
-              image=None, cscales=None, guess_mode=False, strength=1, **args):
+              image=None, cscales=None, guess_mode=False, strength=1,
+              timestep_spacing='linspace', **args):
         """
         Set up the pipeline with the given parameters.
 
@@ -731,7 +733,7 @@ class Cond2ImPipe(BasePipe):
                 Strength image modification. Defaults to 1. A lower strength values keep result close to the input image. value of 1 means input image more or less ignored.
             **args: Additional arguments for the pipeline setup.
         """
-        super().setup(**args)
+        super().setup(timestep_spacing=timestep_spacing, **args)
         # TODO: allow multiple input images for multiple control nets
         self.fname = fimage
         image = Image.open(fimage) if image is None else image
