@@ -736,7 +736,7 @@ class Cond2ImPipe(BasePipe):
         super().setup(timestep_spacing=timestep_spacing, **args)
         # TODO: allow multiple input images for multiple control nets
         self.fname = fimage
-        image = Image.open(fimage) if image is None else image
+        image = Image.open(fimage).convert("RGB") if image is None else image
         self._condition_image = [image]
         self._input_image = [image]
         if cscales is None:
@@ -954,7 +954,7 @@ class InpaintingPipe(BasePipe):
         super().setup(**args)
         # TODO: allow multiple input images for multiple control nets
         self.fname = fimage
-        self._init_image = Image.open(fimage) if image is None else image
+        self._init_image = Image.open(fimage).convert("RGB") if image is None else image
         self._mask_image = mask_image
         self._control_image = self._make_inpaint_condition(self._init_image, mask_image)
 
