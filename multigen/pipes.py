@@ -197,9 +197,13 @@ class BasePipe:
 
     def load_lora(self, path, multiplier=1.0):
         self.pipe.load_lora_weights(path)
-        if 'cross_attention_kwargs' not in self.pipe_params:
-            self.pipe_params['cross_attention_kwargs'] = {}
-        self.pipe_params['cross_attention_kwargs']["scale"] = multiplier
+        if self.model_type == ModelType.FLUX:
+            attention_kw = 'joint_attention_kwargs'
+        else:
+            attention_kw = 'cross_attention_kwargs'
+        if attention_kw not in self.pipe_params:
+            self.pipe_params[attention_kw] = {}
+        self.pipe_params[attention_kw]["scale"] = multiplier
         self._loras.append(path)
 
     def add_hypernet(self, path, multiplier=None):
