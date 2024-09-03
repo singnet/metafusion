@@ -6,6 +6,7 @@ import torch
 import numpy
 
 from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
+from multigen.log import setup_logger
 from multigen.pipes import ModelType
 from dummy import DummyDiffusionPipeline
 
@@ -22,7 +23,7 @@ class TestCase(unittest.TestCase):
 
 
 
-def can_run_lpw():
+def found_models():
     if os.environ.get('METAFUSION_MODELS_DIR'):
         return True
     return False
@@ -165,7 +166,7 @@ class MyTestCase(TestCase):
         # check that difference is small
         self.assertLess(diff, 1)
 
-    @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
+    @unittest.skipIf(not found_models(), "can't run on tiny version of SD")
     def test_lpw(self):
         """
         Check that last part of long prompt affect the generation
@@ -188,7 +189,7 @@ class MyTestCase(TestCase):
         # check that difference is large
         self.assertGreater(diff, 1000)
 
-    @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
+    @unittest.skipIf(not found_models(), "can't run on tiny version of SD")
     def test_lpw_turned_off(self):
         """
         Check that last part of long prompt don't affect the generation with lpw turned off
@@ -211,6 +212,26 @@ class MyTestCase(TestCase):
         # check that difference is large
         self.assertLess(diff, 1)
 
+    @unittest.skipIf(not found_models(), "can't run on tiny version of SD")
+    def test_controlnet(self):
+        model = self.get_model()
+        # create pipe
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline, model_type=self.model_type())
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
+        seed = 49045438434843
+        params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
+                      negative_prompt="spherical",
+                      generator=torch.cuda.manual_seed(seed))
+        image = pipe.gen(params)
+        image.save("cube_test.png")
+
+        # generate with different scheduler
+        params.update(scheduler="DDIMScheduler")
+        image_ddim = pipe.gen(params)
+        image_ddim.save("cube_test2_dimm.png")
+        diff = self.compute_diff(image_ddim, image)
+        # check that difference is large
+        self.assertGreater(diff, 1000)
 
 class TestSDXL(MyTestCase):
 
@@ -222,4 +243,5 @@ class TestSDXL(MyTestCase):
 
 
 if __name__ == '__main__':
+    setup_logger('test_pipe.log')
     unittest.main()
