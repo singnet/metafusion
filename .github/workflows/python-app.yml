@@ -29,6 +29,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: pull lfs
+      run: |
+        cd tests/models-sd/SDXL/tiny-sdxl && git lfs pull
     - name: symlink models directory
       run: ln -s ../../../../models tests/models-full
     - name: Test with pytest
