@@ -32,6 +32,9 @@ jobs:
     - name: pull lfs
       run: |
         cd tests/models-sd/SDXL/tiny-sdxl && git lfs pull
+    - name: pull lfs
+      run: |
+        cd tests/models-sd/tiny-flux-pipe && git lfs pull
     - name: symlink models directory
       run: ln -s ../../../../models tests/models-full
     - name: Test with pytest
