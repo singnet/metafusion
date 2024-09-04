@@ -125,6 +125,14 @@ class BasePipe:
         self.lpw = lpw
         self._loras = []
 
+    @property
+    def offload_gpu_id(self):
+        if hasattr(self.pipe, '_offload_gpu_id'):
+            offload_device = self.pipe._offload_gpu_id
+        else:
+            offload_device = None
+        return offload_device
+
     def _get_model_type(self):
         module = self.pipe.__class__.__module__
         if isinstance(self.pipe, self._classxl):

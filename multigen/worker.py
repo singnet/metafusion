@@ -132,7 +132,7 @@ class ServiceThread(ServiceThreadBase):
                 raise RuntimeError(f"unexpected model type {mt}")
             pipe = self.get_pipeline(pipe_name, model_id, model_type, cnet=data.get('cnet', None))
             device = pipe.pipe.device
-            offload_device = pipe.pipe._offload_gpu_id
+            offload_device = pipe.offload_gpu_id
             self.logger.debug(f'running job on {device} offload {offload_device}')
             if device.type in  ['cuda', 'meta']:
                 with self._lock:
@@ -155,7 +155,7 @@ class ServiceThread(ServiceThreadBase):
             nprompt_default = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers, fewer fingers, lowres, nude, bad hands, duplicate heads, bad anatomy, bad crop"
             nprompt = data.get('nprompt', nprompt_default)
             seeds = data.get('seeds', None)
-            self.logger.debug(f"offload_device {pipe.pipe._offload_gpu_id}")
+            self.logger.debug(f"offload_device {pipe.offload_gpu_id}")
             gs = GenSession(self.get_image_pathname(data["session_id"], None),
                             pipe, Cfgen(data["prompt"], nprompt, seeds=seeds))
             gs.gen_sess(add_count = data["count"],
