@@ -1,6 +1,6 @@
 FROM nvidia/cuda:12.0.0-devel-ubuntu22.04
 RUN apt-get update
-RUN apt-get install -y curl libicu70 python3
+RUN apt-get install -y curl libicu70 python3 git git-lfs
 # needed by opencv
 RUN apt-get -y install ffmpeg libsm6 libxext6
 RUN useradd -ms /bin/bash tester
