@@ -254,7 +254,7 @@ class TestFlux(TestCase):
     def get_model(self):
         models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
         if models_dir is not None:
-            return models_dir + '/SDXL/stable-diffusion-xl-base-1.0'
+            return models_dir + '/flux.1-schnell'
         return models_dir + "/tiny-flux-pipe"
 
 
