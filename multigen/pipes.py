@@ -313,12 +313,10 @@ class BasePipe:
                 logging.warning('negative prompt is not supported by flux!')
                 
         if self.lpw:
+            kwargs.setdefault('negative_prompt', None)
+            kwargs.setdefault('clip_skip', None)
             lora_scale = kwargs.get('cross_attention_kwargs', dict()).get("scale", None)
             if self.model_type == ModelType.SDXL:
-                if 'negative_prompt' not in kwargs:
-                    kwargs['negative_prompt'] = None
-                if 'clip_skip' not in kwargs:
-                    kwargs['clip_skip'] = None
                 # we can override pipe parameters
                 # so we update kwargs with inputs after pipe_params
                 kwargs.update(inputs)
