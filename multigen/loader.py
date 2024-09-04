@@ -19,19 +19,31 @@ else:
 
 logger = logging.getLogger(__file__)
 
-def copy_pipe(pipe):
+
+def weightshare_copy(pipe):
+    """
+    Create a new pipe object then assign weights using load_state_dict from passed 'pipe'
+    """
     copy = pipe.__class__(**pipe.components)
     ctx = init_empty_weights if is_accelerate_available() else nullcontext
     with ctx():
-        copy.unet = copy.unet.__class__.from_config(copy.unet.config)
-        copy.text_encoder = copy.text_encoder.__class__(pipe.text_encoder.config)
-        if hasattr(copy, 'text_encoder_2'):
-            copy.text_encoder_2 = copy.text_encoder_2.__class__(pipe.text_encoder_2.config)
+        for key, component in copy.components.items():
+            if key in ('tokenizer', 'tokenizer_2', 'feature_extractor'):
+                continue
+            if getattr(copy, key) is None:
+                continue
+            cls = getattr(copy, key).__class__
+            if hasattr(cls, 'from_config'):
+                setattr(copy, key, cls.from_config(getattr(copy, key).config))
+            else:
+                setattr(copy, key, cls(getattr(copy, key).config))
     # assign=True is needed since our copy is on "meta" device, i.g. weights are empty
-    copy.unet.load_state_dict(pipe.unet.state_dict(), assign=True)
-    copy.text_encoder.load_state_dict(pipe.text_encoder.state_dict(), assign=True)
-    if hasattr(copy, 'text_encoder_2'):
-        copy.text_encoder_2.load_state_dict(pipe.text_encoder_2.state_dict(), assign=True)
+    for key, component in copy.components.items():
+        if key == 'tokenizer' or key == 'tokenizer_2':
+            continue
+        obj = getattr(copy, key)
+        if hasattr(obj, 'load_state_dict'):
+            obj.load_state_dict(getattr(pipe, key).state_dict(), assign=True)
     return copy
 
 
@@ -57,13 +69,13 @@ class Loader:
                         result.append(idx)
             return result
 
-    def load_pipeline(self, cls: Type[DiffusionPipeline], path, torch_dtype=torch.float16, device=None,
-            **additional_args):
+    def load_pipeline(self, cls: Type[DiffusionPipeline], path, torch_dtype=torch.bfloat16,
+                      device=None, offload_device=None, **additional_args):
         with self._lock:
             logger.debug(f'looking for pipeline {cls} from {path} on {device}')
             result = None
             if device is None:
-                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu', 0)
+                device = torch.device('cpu', 0)
             if device.type == 'cuda':
                 idx = device.index
                 gpu_pipes = self._gpu_pipes.get(idx, [])
@@ -75,20 +87,28 @@ class Loader:
                         return result
             for (key, pipe) in self._cpu_pipes.items():
                 if key == path:
-                    logger.debug(f'found pipe in cpu cache {key}')
-                    result = self.from_pipe(cls, copy.deepcopy(pipe), additional_args)
+                    logger.debug(f'found pipe in cpu cache {key} {pipe.device}')
+                    result = self.from_pipe(cls, pipe, additional_args)
                     break
             if result is None:
                 logger.info(f'not found {path} in cache, loading')
                 if path.endswith('safetensors'):
-                    result = cls.from_single_file(path, **additional_args)
+                    result = cls.from_single_file(path, torch_dtype=torch_dtype, **additional_args)
                 else:
-                    result = cls.from_pretrained(path, **additional_args)
+                    result = cls.from_pretrained(path, torch_dtype=torch_dtype, **additional_args)
+                logger.debug(f'loaded pipe {path} dtype {result.dtype}')
             if device.type == 'cuda':
                 self.clear_cache(device)
-            result = result.to(dtype=torch_dtype, device=device)
+
+            logger.debug("prepare pipe before returning from loader")
+            logger.debug(f"{path} on {result.device} {result.dtype}")
+
+            if result.device != device:
+                result = result.to(dtype=torch_dtype, device=device)
+            if result.dtype != torch_dtype:
+                result = result.to(dtype=torch_dtype)
             self.cache_pipeline(result, path)
-            result = copy_pipe(result)
+            result = weightshare_copy(result)
             assert result.device.type == device.type
             if device.type == 'cuda':
                 assert result.device.index == device.index
@@ -96,7 +116,6 @@ class Loader:
             return result
 
     def from_pipe(self, cls, pipe, additional_args):
-        pipe = copy_pipe(pipe)
         components = pipe.components
         if issubclass(cls, StableDiffusionXLControlNetPipeline) or issubclass(cls, StableDiffusionControlNetPipeline):
             # todo: keep controlnets in cache explicitly
@@ -116,14 +135,19 @@ class Loader:
                 # deepcopy is needed since Module.to is an inplace operation
                 size = get_model_size(pipe)
                 ram = awailable_ram()
-                if ram < size * 3:
+                logger.debug(f'{model_id} has size {size}, ram {ram}')
+                if ram < size * 2.5 and self._cpu_pipes:
                     key_to_delete = random.choice(list(self._cpu_pipes.keys()))
                     self._cpu_pipes.pop(key_to_delete)
-                self._cpu_pipes[model_id] = copy.deepcopy(pipe.to('cpu'))
-            pipe.to(device)
+                item = pipe
+                if pipe.device.type == 'cuda':
+                    item = copy.deepcopy(pipe).to('cpu')
+                self._cpu_pipes[model_id] = item
+                logger.debug(f'storing {model_id} on cpu')
+            assert pipe.device == device
             if pipe.device.type == 'cuda':
                 self._store_gpu_pipe(pipe, model_id)
-            logger.debug(f'storing {model_id} on {pipe.device}')
+                logger.debug(f'storing {model_id} on {pipe.device}')
 
     def clear_cache(self, device):
         logger.debug(f'clear_cache pipelines from {device}')
@@ -143,7 +167,7 @@ class Loader:
     def get_pipeline(self, model_id, device=None):
         with self._lock:
             if device is None:
-                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu', 0)
             if device.type == 'cuda':
                 idx = device.index
                 gpu_pipes = self._gpu_pipes.get(idx, ())
@@ -160,7 +184,7 @@ class Loader:
 def count_params(model):
     total_size = sum(param.numel() for param in model.parameters())
     mul = 2
-    if model.dtype == torch.float16:
+    if model.dtype in (torch.float16, torch.bfloat16):
         mul = 2
     elif model.dtype == torch.float32:
         mul = 4
