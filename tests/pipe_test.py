@@ -242,6 +242,43 @@ class TestSDXL(MyTestCase):
         return "hf-internal-testing/tiny-stable-diffusion-xl-pipe"
 
 
+
+class TestFlux(TestCase):
+
+    def setUp(self):
+        self._pipeline = None
+
+    def model_type(self):
+        return ModelType.FLUX
+
+    def get_model(self):
+        models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
+        if models_dir is not None:
+            return models_dir + '/SDXL/stable-diffusion-xl-base-1.0'
+        return models_dir + "/tiny-flux-pipe"
+
+
+    def test_basic_txt2im(self):
+        model = self.get_model()
+        # create pipe
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline, model_type=self.model_type())
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
+        seed = 49045438434843
+        params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
+                      negative_prompt="spherical",
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
+        image = pipe.gen(params)
+        image.save("cube_test.png")
+
+        # generate with different scheduler
+        params.update(scheduler="DDIMScheduler")
+        image_ddim = pipe.gen(params)
+        image_ddim.save("cube_test2_dimm.png")
+        diff = self.compute_diff(image_ddim, image)
+        # check that difference is large
+        self.assertGreater(diff, 1000)
+
+
 if __name__ == '__main__':
     setup_logger('test_pipe.log')
     unittest.main()
