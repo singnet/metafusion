@@ -1,16 +1,16 @@
 base:
   netta:
     id: SDXL/tiny-sdxl1
-    xl: True
+    type: SDXL
   sdxl1:
     id: SDXL/tiny-sdxl2
-    xl: True
+    type: SDXL
   jug:
     id: SDXL/tiny-sdxl3
-    xl: True
+    type: SDXL
   nih:
     id: SDXL/tiny-sdxl4
-    xl: True
+    type: SDXL
 
 pipes:
     prompt2image:

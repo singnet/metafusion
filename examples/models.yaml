@@ -1,14 +1,14 @@
 base:
   netta:
     id: SDXL/netaArtXL_v10.safetensors
-    xl: True
+    type: SDXL
   sdxl1:
     id: SDXL/stable-diffusion-xl-base-1.0/sd_xl_base_1.0.safetensors
-    xl: True
+    type: SDXL
 lora:
   hypersd4steps:
     id: Hyper-SDXL-4steps-lora.safetensors
-    xl: True
+    type: SDXL
 
 pipes:
     prompt2image:
