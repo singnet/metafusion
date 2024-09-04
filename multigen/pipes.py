@@ -17,6 +17,7 @@ from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCM
 from diffusers import StableDiffusionControlNetInpaintPipeline, StableDiffusionXLControlNetInpaintPipeline, DDIMScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers import StableDiffusionXLControlNetImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline
+from diffusers import FluxPipeline
 
 from .pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
 from .pipelines.masked_stable_diffusion_xl_img2img import MaskedStableDiffusionXLImg2ImgPipeline
@@ -66,6 +67,7 @@ class BasePipe:
     """
     _class = None
     _classxl = None
+    _flux = FluxPipeline
 
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]] = None,
@@ -232,6 +234,7 @@ class BasePipe:
         cfg['scheduler'] = dict(self.pipe.scheduler.config)
         cfg['scheduler']['class_name'] = self.pipe.scheduler.__class__.__name__
         cfg['loras'] = self._loras
+        cfg['dtype'] = str(self.pipe.dtype)
         cfg.update(self.pipe_params)
         return cfg
 
@@ -299,6 +302,8 @@ class BasePipe:
                 kwargs.pop('clip_skip')
             if 'negative_prompt' in kwargs:
                 kwargs.pop('negative_prompt')
+                logging.warning('negative prompt is not supported by flux!')
+                
         if self.lpw:
             lora_scale = kwargs.get('cross_attention_kwargs', dict()).get("scale", None)
             if self.model_type == ModelType.SDXL:
@@ -392,6 +397,7 @@ class Im2ImPipe(BasePipe):
     _autopipeline = AutoPipelineForImage2Image
     _class = StableDiffusionImg2ImgPipeline
     _classxl = StableDiffusionXLImg2ImgPipeline
+    _flux = None # not implemented yet
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **args):
         super().__init__(model_id=model_id, pipe=pipe, **args)
