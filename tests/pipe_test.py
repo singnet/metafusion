@@ -54,7 +54,7 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
                       negative_prompt="spherical",
-                      generator=torch.cuda.manual_seed(seed))
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test.png")
 
@@ -125,15 +125,15 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
-        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         image.save('test_img2img_basic.png')
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=7.6)
-        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
-        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         diff = self.compute_diff(image2, image)
         # check that difference is small
         self.assertLess(diff, 1)
@@ -153,15 +153,15 @@ class MyTestCase(TestCase):
                scheduler=scheduler, clip_skip=0, blur=blur, blur_compose=3, steps=5, guidance_scale=7.6)
         pipe.setup(**param_3_3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
-        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         image.save('test_img2img_basic.png')
         pipe.setup(**param_7_6)
-        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
         pipe.setup(**param_3_3)
-        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         diff = self.compute_diff(image2, image)
         # check that difference is small
         self.assertLess(diff, 1)
@@ -177,12 +177,12 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         params = dict(prompt=prompt,
                       negative_prompt="spherical",
-                      generator=torch.cuda.manual_seed(seed))
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test_lpw.png")
         params = dict(prompt=prompt + " , best quality, famous photo",
                 negative_prompt="spherical",
-                generator=torch.cuda.manual_seed(seed))
+                generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image1 = pipe.gen(params)
         image.save("cube_test_lpw1.png")
         diff = self.compute_diff(image1, image)
@@ -200,12 +200,12 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         params = dict(prompt=prompt,
                       negative_prompt="spherical",
-                      generator=torch.cuda.manual_seed(seed))
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test_no_lpw.png")
         params = dict(prompt=prompt + " , best quality, famous photo",
                 negative_prompt="spherical",
-                generator=torch.cuda.manual_seed(seed))
+                generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image1 = pipe.gen(params)
         image.save("cube_test_no_lpw1.png")
         diff = self.compute_diff(image1, image)
@@ -221,7 +221,7 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
                       negative_prompt="spherical",
-                      generator=torch.cuda.manual_seed(seed))
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test.png")
 
