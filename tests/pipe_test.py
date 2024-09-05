@@ -255,23 +255,27 @@ class TestFlux(TestCase):
         models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
         if models_dir is not None:
             return models_dir + '/flux.1-schnell'
-        return models_dir + "/tiny-flux-pipe"
+        return './models-sd/' + "/tiny-flux-pipe"
 
 
     def test_basic_txt2im(self):
         model = self.get_model()
+        device = torch.device('cpu', 0)
         # create pipe
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline, model_type=self.model_type())
-        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
+        offload = 0 if torch.cuda.is_available() else None
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline, 
+                             model_type=self.model_type(), 
+                             device=device, offload_device=offload)
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="FlowMatchEulerDiscreteScheduler", steps=5)
         seed = 49045438434843
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
                       negative_prompt="spherical",
-                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
+                      generator=torch.Generator(device).manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test.png")
 
-        # generate with different scheduler
-        params.update(scheduler="DDIMScheduler")
+        # generate with different seed
+        params['generator'] = torch.Generator(device).manual_seed(seed + 1)
         image_ddim = pipe.gen(params)
         image_ddim.save("cube_test2_dimm.png")
         diff = self.compute_diff(image_ddim, image)
