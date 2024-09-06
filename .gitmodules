@@ -1,0 +1,9 @@
+[submodule "tests/models-sd/SDXL/tiny-sdxl-pipe"]
+	path = tests/models-sd/SDXL/tiny-sdxl/
+	url = https://huggingface.co/hf-internal-testing/tiny-sdxl-pipe
+[submodule "tests/models-sd/SDXL/tiny-sdxl"]
+	path = tests/models-sd/SDXL/tiny-sdxl
+	url = https://huggingface.co/hf-internal-testing/tiny-sdxl-pipe
+[submodule "tests/models-sd/flux/tiny-flux-pipe"]
+	path = tests/models-sd/flux/tiny-flux-pipe
+	url = https://huggingface.co/hf-internal-testing/tiny-flux-pipe

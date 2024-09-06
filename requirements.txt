@@ -7,3 +7,6 @@ Pillow
 torch
 transformers
 psutil
+sentencepiece
+protobuf
+accelerate

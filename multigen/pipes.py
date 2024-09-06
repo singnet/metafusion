@@ -17,6 +17,7 @@ from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCM
 from diffusers import StableDiffusionControlNetInpaintPipeline, StableDiffusionXLControlNetInpaintPipeline, DDIMScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers import StableDiffusionXLControlNetImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline
+from diffusers import FluxPipeline
 
 from .pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
 from .pipelines.masked_stable_diffusion_xl_img2img import MaskedStableDiffusionXLImg2ImgPipeline
@@ -66,6 +67,7 @@ class BasePipe:
     """
     _class = None
     _classxl = None
+    _flux = FluxPipeline
 
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]] = None,
@@ -122,6 +124,14 @@ class BasePipe:
         self._initialize_pipe(device, offload_device)
         self.lpw = lpw
         self._loras = []
+
+    @property
+    def offload_gpu_id(self):
+        if hasattr(self.pipe, '_offload_gpu_id'):
+            offload_device = self.pipe._offload_gpu_id
+        else:
+            offload_device = None
+        return offload_device
 
     def _get_model_type(self):
         module = self.pipe.__class__.__module__
@@ -232,6 +242,7 @@ class BasePipe:
         cfg['scheduler'] = dict(self.pipe.scheduler.config)
         cfg['scheduler']['class_name'] = self.pipe.scheduler.__class__.__name__
         cfg['loras'] = self._loras
+        cfg['dtype'] = str(self.pipe.dtype)
         cfg.update(self.pipe_params)
         return cfg
 
@@ -299,13 +310,13 @@ class BasePipe:
                 kwargs.pop('clip_skip')
             if 'negative_prompt' in kwargs:
                 kwargs.pop('negative_prompt')
+                logging.warning('negative prompt is not supported by flux!')
+                
         if self.lpw:
+            kwargs.setdefault('negative_prompt', None)
+            kwargs.setdefault('clip_skip', None)
             lora_scale = kwargs.get('cross_attention_kwargs', dict()).get("scale", None)
             if self.model_type == ModelType.SDXL:
-                if 'negative_prompt' not in kwargs:
-                    kwargs['negative_prompt'] = None
-                if 'clip_skip' not in kwargs:
-                    kwargs['clip_skip'] = None
                 # we can override pipe parameters
                 # so we update kwargs with inputs after pipe_params
                 kwargs.update(inputs)
@@ -392,6 +403,7 @@ class Im2ImPipe(BasePipe):
     _autopipeline = AutoPipelineForImage2Image
     _class = StableDiffusionImg2ImgPipeline
     _classxl = StableDiffusionXLImg2ImgPipeline
+    _flux = None # not implemented yet
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **args):
         super().__init__(model_id=model_id, pipe=pipe, **args)

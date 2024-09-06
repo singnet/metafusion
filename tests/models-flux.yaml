@@ -1,17 +1,16 @@
 base:
   netta:
-    id: SDXL/tiny-sdxl1
-    type: SDXL
+    id: flux.1-schnell
+    type: FLUX 
   sdxl1:
-    id: SDXL/tiny-sdxl2
-    type: SDXL
+    id: flux.1-schnell
+    type: FLUX 
   jug:
-    id: SDXL/tiny-sdxl3
-    type: SDXL
+    id: flux.1-schnell
+    type: FLUX 
   nih:
-    id: SDXL/tiny-sdxl4
-    type: SDXL
-
+    id: flux.1-schnell
+    type: FLUX 
 pipes:
     prompt2image:
         name: "Prompt to Image"

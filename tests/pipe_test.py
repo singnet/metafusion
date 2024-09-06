@@ -6,6 +6,7 @@ import torch
 import numpy
 
 from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
+from multigen.log import setup_logger
 from multigen.pipes import ModelType
 from dummy import DummyDiffusionPipeline
 
@@ -22,7 +23,7 @@ class TestCase(unittest.TestCase):
 
 
 
-def can_run_lpw():
+def found_models():
     if os.environ.get('METAFUSION_MODELS_DIR'):
         return True
     return False
@@ -53,7 +54,7 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
                       negative_prompt="spherical",
-                      generator=torch.cuda.manual_seed(seed))
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test.png")
 
@@ -124,15 +125,15 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
-        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         image.save('test_img2img_basic.png')
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=7.6)
-        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
-        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         diff = self.compute_diff(image2, image)
         # check that difference is small
         self.assertLess(diff, 1)
@@ -152,20 +153,20 @@ class MyTestCase(TestCase):
                scheduler=scheduler, clip_skip=0, blur=blur, blur_compose=3, steps=5, guidance_scale=7.6)
         pipe.setup(**param_3_3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
-        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         image.save('test_img2img_basic.png')
         pipe.setup(**param_7_6)
-        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
         pipe.setup(**param_3_3)
-        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.cuda.manual_seed(seed)))
+        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
         diff = self.compute_diff(image2, image)
         # check that difference is small
         self.assertLess(diff, 1)
 
-    @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
+    @unittest.skipIf(not found_models(), "can't run on tiny version of SD")
     def test_lpw(self):
         """
         Check that last part of long prompt affect the generation
@@ -176,19 +177,19 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         params = dict(prompt=prompt,
                       negative_prompt="spherical",
-                      generator=torch.cuda.manual_seed(seed))
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test_lpw.png")
         params = dict(prompt=prompt + " , best quality, famous photo",
                 negative_prompt="spherical",
-                generator=torch.cuda.manual_seed(seed))
+                generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image1 = pipe.gen(params)
         image.save("cube_test_lpw1.png")
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
 
-    @unittest.skipIf(not can_run_lpw(), "can't run on tiny version of SD")
+    @unittest.skipIf(not found_models(), "can't run on tiny version of SD")
     def test_lpw_turned_off(self):
         """
         Check that last part of long prompt don't affect the generation with lpw turned off
@@ -199,18 +200,38 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         params = dict(prompt=prompt,
                       negative_prompt="spherical",
-                      generator=torch.cuda.manual_seed(seed))
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
         image.save("cube_test_no_lpw.png")
         params = dict(prompt=prompt + " , best quality, famous photo",
                 negative_prompt="spherical",
-                generator=torch.cuda.manual_seed(seed))
+                generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image1 = pipe.gen(params)
         image.save("cube_test_no_lpw1.png")
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertLess(diff, 1)
 
+    @unittest.skipIf(not found_models(), "can't run on tiny version of SD")
+    def test_controlnet(self):
+        model = self.get_model()
+        # create pipe
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline, model_type=self.model_type())
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
+        seed = 49045438434843
+        params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
+                      negative_prompt="spherical",
+                      generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
+        image = pipe.gen(params)
+        image.save("cube_test.png")
+
+        # generate with different scheduler
+        params.update(scheduler="DDIMScheduler")
+        image_ddim = pipe.gen(params)
+        image_ddim.save("cube_test2_dimm.png")
+        diff = self.compute_diff(image_ddim, image)
+        # check that difference is large
+        self.assertGreater(diff, 1000)
 
 class TestSDXL(MyTestCase):
 
@@ -221,5 +242,47 @@ class TestSDXL(MyTestCase):
         return "hf-internal-testing/tiny-stable-diffusion-xl-pipe"
 
 
+
+class TestFlux(TestCase):
+
+    def setUp(self):
+        self._pipeline = None
+
+    def model_type(self):
+        return ModelType.FLUX
+
+    def get_model(self):
+        models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
+        if models_dir is not None:
+            return models_dir + '/flux.1-schnell'
+        return './models-sd/' + "/tiny-flux-pipe"
+
+
+    def test_basic_txt2im(self):
+        model = self.get_model()
+        device = torch.device('cpu', 0)
+        # create pipe
+        offload = 0 if torch.cuda.is_available() else None
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline, 
+                             model_type=self.model_type(), 
+                             device=device, offload_device=offload)
+        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="FlowMatchEulerDiscreteScheduler", steps=5)
+        seed = 49045438434843
+        params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
+                      negative_prompt="spherical",
+                      generator=torch.Generator(device).manual_seed(seed))
+        image = pipe.gen(params)
+        image.save("cube_test.png")
+
+        # generate with different seed
+        params['generator'] = torch.Generator(device).manual_seed(seed + 1)
+        image_ddim = pipe.gen(params)
+        image_ddim.save("cube_test2_dimm.png")
+        diff = self.compute_diff(image_ddim, image)
+        # check that difference is large
+        self.assertGreater(diff, 1000)
+
+
 if __name__ == '__main__':
+    setup_logger('test_pipe.log')
     unittest.main()

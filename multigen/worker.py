@@ -9,6 +9,10 @@ from .prompting import Cfgen
 from .sessions import GenSession
 from .pipes import Prompt2ImPipe, ModelType 
 
+SDXL = 'SDXL'
+FLUX = 'FLUX'
+SD = 'SD'
+
 
 class ServiceThread(ServiceThreadBase):
 
@@ -16,9 +20,9 @@ class ServiceThread(ServiceThreadBase):
         super().__init__(*args, **kwargs)
         self._gpu_jobs = dict()
 
-    def get_pipeline(self, pipe_name, model_id, cnet=None, xl=False):
+    def get_pipeline(self, pipe_name, model_id, model_type, cnet=None):
         pipe_class = self.get_pipe_class(pipe_name)
-        return self._get_pipeline(pipe_class, model_id, cnet=cnet, xl=xl)
+        return self._get_pipeline(pipe_class, model_id, model_type, cnet=cnet)
 
     def _get_device(self, model_id):
         # choose random from resting gpus
@@ -46,32 +50,41 @@ class ServiceThread(ServiceThreadBase):
             self.logger.debug(f'locked device cuda:{idx} for {model_id}')
             return torch.device('cuda', idx)
 
-    def _get_pipeline(self, pipe_class, model_id, cnet=None, xl=False):
+    def _get_pipeline(self, pipe_class, model_id, model_type, cnet=None):
         device = self._get_device(model_id)
+        offload_device = None
         if cnet is None:
             # no controlnet
-            if xl:
+            if model_type == ModelType.SDXL:
                 cls = pipe_class._classxl
+            elif model_type == ModelType.FLUX:
+                cls = pipe_class._flux
+                if device.type == 'cuda':
+                    offload_device = device.index
+                    device = torch.device('cpu')
             else:
                 cls = pipe_class._class
-            pipeline = self._loader.load_pipeline(cls, model_id, torch_dtype=torch.float16, device=device)
+            pipeline = self._loader.load_pipeline(cls, model_id, torch_dtype=torch.bfloat16, 
+                                                  device=device)
             self.logger.debug(f'requested {cls} {model_id} on device {device}, got {pipeline.device}')
             assert pipeline.device == device
-            pipe = pipe_class(model_id, pipe=pipeline, device=device)
-            assert pipeline.device == device
+            pipe = pipe_class(model_id, pipe=pipeline, device=device, offload_device=offload_device)
+            if offload_device is None:
+                assert pipeline.device == device
         else:
-            # out pipeline uses controlnet
-            pipeline = self._loader.get_pipeline(model_id, device=device)
-            cnet_type = ModelType.SD
-
-            if xl:
-                cnet_type = ModelType.SDXL
+            # our pipeline uses controlnet
+            pipeline = self._loader.get_pipeline(model_id, device=device, model_type=model_type)
+            if model_type == FLUX:
+                cnet_type = ModelType.FLUX
+                if device.type == 'cuda':
+                    offload_device = device.index
+                    device = torch.device('cpu')
             if pipeline is None or 'controlnet' not in pipeline.components:
                 # reload
-                pipe = pipe_class(model_id, ctypes=[cnet], model_type=cnet_type, device=device)
+                pipe = pipe_class(model_id, ctypes=[cnet], model_type=model_type, device=device, offload_device=offload_device)
                 self._loader.cache_pipeline(pipe.pipe, model_id)
             else:
-                pipe = pipe_class(model_id, pipe=pipeline, model_type=cnet_type, device=device)
+                pipe = pipe_class(model_id, pipe=pipeline, model_type=model_type, device=device, offload_device=offload_device)
         return pipe
 
     def run(self):
@@ -108,13 +121,25 @@ class ServiceThread(ServiceThreadBase):
             model_id = str(self.cwd/self.config["model_dir"]/self.models['base'][sess["model"]]['id'])
             loras = [str(self.cwd/self.config["model_dir"]/'Lora'/self.models['lora'][x]['id']) for x in sess.get("loras", [])]
             data['loras'] = loras
-            is_xl = self.models['base'][sess["model"]]['xl']
-            pipe = self.get_pipeline(pipe_name, model_id, cnet=data.get('cnet', None), xl=is_xl)
+            mt = self.models['base'][sess["model"]]['type']
+            if mt == SDXL:
+                model_type = ModelType.SDXL
+            elif mt == SD:
+                model_type = ModelType.SD
+            elif mt == FLUX:
+                model_type = ModelType.FLUX
+            else:
+                raise RuntimeError(f"unexpected model type {mt}")
+            pipe = self.get_pipeline(pipe_name, model_id, model_type, cnet=data.get('cnet', None))
             device = pipe.pipe.device
-            self.logger.debug(f'running job on {device}')
-            if device.type == 'cuda':
+            offload_device = pipe.offload_gpu_id
+            self.logger.debug(f'running job on {device} offload {offload_device}')
+            if device.type in  ['cuda', 'meta']:
                 with self._lock:
-                    self._gpu_jobs[device.index] = model_id
+                    if device.type == 'meta':
+                        self._gpu_jobs[offload_device] = model_id
+                    else:
+                        self._gpu_jobs[device.index] = model_id
             class_name = str(pipe.__class__)
             self.logger.debug(f'got pipeline {class_name}')
 
@@ -127,8 +152,10 @@ class ServiceThread(ServiceThreadBase):
             else:
                 pipe.setup(**data)
             # TODO: add negative prompt to parameters
-            nprompt = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers, fewer fingers, lowres, nude, bad hands, duplicate heads, bad anatomy, bad crop"
+            nprompt_default = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers, fewer fingers, lowres, nude, bad hands, duplicate heads, bad anatomy, bad crop"
+            nprompt = data.get('nprompt', nprompt_default)
             seeds = data.get('seeds', None)
+            self.logger.debug(f"offload_device {pipe.offload_gpu_id}")
             gs = GenSession(self.get_image_pathname(data["session_id"], None),
                             pipe, Cfgen(data["prompt"], nprompt, seeds=seeds))
             gs.gen_sess(add_count = data["count"],
@@ -137,13 +164,19 @@ class ServiceThread(ServiceThreadBase):
                 data['finish_callback']()
         except (RuntimeError, TypeError, NotImplementedError) as e:
             self.logger.error("error in generation", exc_info=e)
+            self.logger.error(f"offload_device {pipe.pipe._offload_gpu_id}")
             if 'finish_callback' in data:
                 data['finish_callback']("Can't generate image due to error")
         except Exception as e:
             self.logger.error("unexpected error in generation", exc_info=e)
             raise e
         finally:
-            self.logger.debug('unlock device %s', device)
-            if device is not None and device.type == 'cuda':
-                with self._lock:
-                    del self._gpu_jobs[device.index]
+            with self._lock:
+                index = None
+                if device is not None and device.type == 'cuda':
+                    index = device.index
+                if pipe.pipe._offload_gpu_id is not None:
+                    index = pipe.pipe._offload_gpu_id
+                if index is not None:
+                    self.logger.debug('unlock device %s', index)
+                    del self._gpu_jobs[index]

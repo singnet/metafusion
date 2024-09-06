@@ -1,0 +1,3 @@
+model_list: models-flux.yaml
+model_dir: ./models-full/
+logging_folder: ./logs/
