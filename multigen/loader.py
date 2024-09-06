@@ -1,6 +1,6 @@
 from typing import Type, List
 import random
-import copy
+import copy as cp
 from contextlib import nullcontext
 import torch
 import logging
@@ -28,9 +28,10 @@ def weightshare_copy(pipe):
     ctx = init_empty_weights if is_accelerate_available() else nullcontext
     with ctx():
         for key, component in copy.components.items():
-            if key in ('tokenizer', 'tokenizer_2', 'feature_extractor'):
-                continue
             if getattr(copy, key) is None:
+                continue
+            if key in ('tokenizer', 'tokenizer_2', 'feature_extractor'):
+                setattr(copy, key, cp.deepcopy(getattr(copy, key)))
                 continue
             cls = getattr(copy, key).__class__
             if hasattr(cls, 'from_config'):
@@ -141,7 +142,7 @@ class Loader:
                     self._cpu_pipes.pop(key_to_delete)
                 item = pipe
                 if pipe.device.type == 'cuda':
-                    item = copy.deepcopy(pipe).to('cpu')
+                    item = cp.deepcopy(pipe).to('cpu')
                 self._cpu_pipes[model_id] = item
                 logger.debug(f'storing {model_id} on cpu')
             assert pipe.device == device
