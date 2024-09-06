@@ -175,8 +175,8 @@ These arguments are expected by open_session:
 **queue_gen** is used to schedule image generation. These keyword arguments are expected: 
 * **session_id** One of the session IDs returned by open_session.  
 * **count**: Number of images to generate.  
-* **image_callback:** Callback function that accepts one argument - the path to the generated image.
-Other arguments are passed as is to the *setup()* method of the pipeline, and prompt is passed to *gen()*.
+* **image_callback:** Callback function that accepts one argument - the path to the generated image.  
+Other arguments are passed as is to the setup() method of the pipeline, and prompt is passed to gen().  
 
 full example:
 ```
