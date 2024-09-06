@@ -1,0 +1,20 @@
+base:
+  netta:
+    id: flux.1-schnell
+    type: FLUX 
+  sdxl1:
+    id: flux.1-schnell
+    type: FLUX 
+  jug:
+    id: flux.1-schnell
+    type: FLUX 
+  nih:
+    id: flux.1-schnell
+    type: FLUX 
+pipes:
+    prompt2image:
+        name: "Prompt to Image"
+        classname: Prompt2ImPipe
+        need_imgs: False
+        needs_cnet: False
+

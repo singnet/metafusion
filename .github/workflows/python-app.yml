@@ -45,3 +45,6 @@ jobs:
     - name: Test worker 
       run: |
         cd tests && python test_worker.py
+    - name: Test worker flux
+      run: |
+        cd tests && python test_worker_flux.py
