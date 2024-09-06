@@ -1,6 +1,8 @@
 
 # metafusion library
 
+Multithread image generation service.
+
 # Pipes classes
 
 Pipe classes implement different methods to generate or process images using diffusion models.
@@ -148,12 +150,12 @@ base:
   sdxl1:
     # https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/sd_xl_base_1.0.safetensors
     id: SDXL/stable-diffusion-xl-base-1.0/sd_xl_base_1.0.safetensors
-    xl: True
+    type: SDXL
 lora:
   # https://huggingface.co/ByteDance/Hyper-SD/blob/main/Hyper-SDXL-4steps-lora.safetensors
   hypersd4steps:
     id: Hyper-SDXL-4steps-lora.safetensors
-    xl: True
+    type: SDXL
 
 pipes:
     prompt2image:
