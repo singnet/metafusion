@@ -22,6 +22,7 @@ from diffusers import FluxPipeline
 from .pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
 from .pipelines.masked_stable_diffusion_xl_img2img import MaskedStableDiffusionXLImg2ImgPipeline
 from transformers import CLIPProcessor, CLIPTextModel
+from . import util
 #from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 # from diffusers import StableDiffusionKDiffusionPipeline
 
@@ -311,7 +312,7 @@ class BasePipe:
             if 'negative_prompt' in kwargs:
                 kwargs.pop('negative_prompt')
                 logging.warning('negative prompt is not supported by flux!')
-                
+
         if self.lpw:
             kwargs.setdefault('negative_prompt', None)
             kwargs.setdefault('clip_skip', None)
@@ -428,6 +429,8 @@ class Im2ImPipe(BasePipe):
         self.fname = fimage
         self._input_image = Image.open(fimage).convert("RGB") if image is None else image
         self._input_image = self.scale_image(self._input_image, scale)
+        self._original_size = self._input_image.size
+        self._input_image = util.pad_image_to_multiple_of_8(self._input_image)
         self.pipe_params.update({
             "strength": strength,
             "guidance_scale": guidance_scale
@@ -481,7 +484,8 @@ class Im2ImPipe(BasePipe):
         kwargs.update({"image": self._input_image})
         self.try_set_scheduler(kwargs)
         image = self.pipe(**kwargs).images[0]
-        return image
+        result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
+        return result
 
 
 class MaskedIm2ImPipe(Im2ImPipe):
@@ -550,12 +554,24 @@ class MaskedIm2ImPipe(Im2ImPipe):
         self._original_image = Image.open(original_image) if isinstance(original_image, str) else original_image
         self._image_painted = Image.open(image_painted) if isinstance(image_painted, str) else image_painted
 
+        if self._original_image.mode == 'RGBA':
+            self._original_image = self._original_image.convert("RGB")
+
+        if self._image_painted is not None:
+            if not isinstance(self._image_painted, Image.Image):
+                self._image_painted = Image.fromarray(self._image_painted)
+            self._image_painted = self._image_painted.convert("RGB")
+
         input_image = self._image_painted if self._image_painted is not None else self._original_image
+
         super().setup(fimage=None, image=input_image, scale=scale, **kwargs)
         if self._original_image is not None:
             self._original_image = self.scale_image(self._original_image, scale)
+            self._original_image = util.pad_image_to_multiple_of_8(self._original_image)
         if self._image_painted is not None:
             self._image_painted = self.scale_image(self._image_painted, scale)
+            self._image_painted = util.pad_image_to_multiple_of_8(self._image_painted)
+
         # there are two options:
         # 1. mask is provided
         # 2. mask is computed from difference between original_image and image_painted
@@ -571,8 +587,11 @@ class MaskedIm2ImPipe(Im2ImPipe):
             pil_mask = Image.fromarray(mask)
             if pil_mask.mode != "L":
                 pil_mask = pil_mask.convert("L")
+        pil_mask = util.pad_image_to_multiple_of_8(pil_mask)
+        self._mask = pil_mask
         self._mask_blur = self.blur_mask(pil_mask, blur)
-        self._mask_compose = self.blur_mask(pil_mask, blur_compose)
+        self._mask_compose = self.blur_mask(pil_mask.crop((0, 0, self._original_size[0], self._original_size[1]))
+ , blur_compose)
         self._sample_mode = sample_mode
 
     def blur_mask(self, pil_mask, blur):
@@ -592,7 +611,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
         img_gen = super().gen(inputs)
 
         # compose with original using mask
-        img_compose = self._mask_compose * img_gen + (1 - self._mask_compose) * self._original_image
+        img_compose = self._mask_compose * img_gen + (1 - self._mask_compose) * self._original_image.crop((0, 0, self._original_size[0], self._original_size[1]))
         # convert to PIL image
         img_compose = Image.fromarray(img_compose.astype(np.uint8))
         return img_compose
@@ -753,6 +772,8 @@ class Cond2ImPipe(BasePipe):
         # TODO: allow multiple input images for multiple control nets
         self.fname = fimage
         image = Image.open(fimage).convert("RGB") if image is None else image
+        self._original_size = image.size
+        image = util.pad_image_to_multiple_of_8(image)
         self._condition_image = [image]
         self._input_image = [image]
         if cscales is None:
@@ -798,6 +819,7 @@ class Cond2ImPipe(BasePipe):
         inputs.update({"image": self._input_image,
                        "control_image": self._condition_image})
         image = self.pipe(**inputs).images[0]
+        result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
         return image
 
 
