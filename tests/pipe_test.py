@@ -7,7 +7,7 @@ import torch
 import numpy
 
 from PIL import Image
-from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
+from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe, CIm2ImPipe
 from multigen.log import setup_logger
 from multigen.pipes import ModelType
 from dummy import DummyDiffusionPipeline
@@ -35,6 +35,7 @@ class MyTestCase(TestCase):
 
     def setUp(self):
         self._pipeline = None
+        self._img_count = 0
 
     def get_model(self):
         models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
@@ -45,7 +46,8 @@ class MyTestCase(TestCase):
     def get_ref_image(self, dw, dh):
         img = Image.open("cube_planet_dms.png")
         img = img.resize((img.width + dw, img.height + dh))
-        pth = './cube_planet_dms1.png'
+        pth = './cube_planet_dms' + str(self._img_count) + '.png'
+        self._img_count += 1
         img.save(pth)
         return pth
 
@@ -233,14 +235,19 @@ class MyTestCase(TestCase):
     def test_controlnet(self):
         model = self.get_model()
         # create pipe
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline, model_type=self.model_type())
-        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
+        pipe = CIm2ImPipe(model, model_type=self.model_type(), ctypes=['soft'])
+        dw, dh = 1, -1
+        imgpth = self.get_ref_image(dw, dh)
+        pipe.setup(imgpth, cscales=[0.3], guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
         seed = 49045438434843
-        params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
+        params = dict(prompt="cube planet minecraft style",
                       negative_prompt="spherical",
                       generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
-        image.save("cube_test.png")
+        image.save("mech_test.png")
+        img_ref = PIL.Image.open(imgpth)
+        self.assertEqual(image.width, img_ref.width)
+        self.assertEqual(image.height, img_ref.height)
 
         # generate with different scheduler
         params.update(scheduler="DDIMScheduler")

@@ -618,6 +618,9 @@ class MaskedIm2ImPipe(Im2ImPipe):
 
 
 class Cond2ImPipe(BasePipe):
+    """
+    Image to image generation with ControlNet
+    """
     _class = StableDiffusionControlNetImg2ImgPipeline
     _classxl = StableDiffusionXLControlNetImg2ImgPipeline
     _autopipeline = DiffusionPipeline
@@ -820,7 +823,7 @@ class Cond2ImPipe(BasePipe):
                        "control_image": self._condition_image})
         image = self.pipe(**inputs).images[0]
         result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
-        return image
+        return result
 
 
 class CIm2ImPipe(Cond2ImPipe):
