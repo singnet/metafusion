@@ -36,7 +36,10 @@ jobs:
       run: |
         cd tests/models-sd/flux/tiny-flux-pipe && git lfs pull
     - name: symlink models directory
-      run: ln -s ../../../../models tests/models-full
+      run: |
+        ln -s ../../../../models tests/models-full && 
+        ln -s ../../../../models/ControlNet tests/models-cn
+        ln -s ../../../../models/ControlNetXL tests/models-cn-xl
     - name: Test with pytest
       env:
         METAFUSION_MODELS_DIR: models-full

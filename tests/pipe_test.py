@@ -1,11 +1,13 @@
 import unittest
 import os
+import logging
 import shutil
 import PIL
 import torch
 import numpy
 
-from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe
+from PIL import Image
+from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe, CIm2ImPipe
 from multigen.log import setup_logger
 from multigen.pipes import ModelType
 from dummy import DummyDiffusionPipeline
@@ -33,6 +35,7 @@ class MyTestCase(TestCase):
 
     def setUp(self):
         self._pipeline = None
+        self._img_count = 0
 
     def get_model(self):
         models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
@@ -40,8 +43,13 @@ class MyTestCase(TestCase):
             return models_dir + '/icb_diffusers'
         return "hf-internal-testing/tiny-stable-diffusion-torch"
 
-    def get_ref_image(self):
-        return "cube_planet_dms.png"
+    def get_ref_image(self, dw, dh):
+        img = Image.open("cube_planet_dms.png")
+        img = img.resize((img.width + dw, img.height + dh))
+        pth = './cube_planet_dms' + str(self._img_count) + '.png'
+        self._img_count += 1
+        img.save(pth)
+        return pth
 
     def model_type(self):
         return ModelType.SDXL if 'TestSDXL' in str(self.__class__) else ModelType.SD
@@ -121,7 +129,8 @@ class MyTestCase(TestCase):
 
     def test_img2img_basic(self):
         pipe = Im2ImPipe(self.get_model(), model_type=self.model_type())
-        im = self.get_ref_image()
+        dw, dh = -1, 1
+        im = self.get_ref_image(dw, dh)
         seed = 49045438434843
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
@@ -141,8 +150,14 @@ class MyTestCase(TestCase):
     def test_maskedimg2img_basic(self):
         pipe = MaskedIm2ImPipe(self.get_model(), model_type=self.model_type())
         img = PIL.Image.open("./mech_beard_sigm.png")
+        dw, dh = -1, -1
+        img = img.crop((0, 0, img.width + dw, img.height + dh))
+        logging.info(f'testing on image {img.size}')
+
         # read image with mask painted over
-        img_paint = numpy.array(PIL.Image.open("./mech_beard_sigm_mask.png"))
+        img_paint = PIL.Image.open("./mech_beard_sigm_mask.png")
+        img_paint = img_paint.crop((0, 0, img_paint.width + dw, img_paint.height + dh))
+        img_paint = numpy.asarray(img_paint)
 
         scheduler = "EulerAncestralDiscreteScheduler"
         seed = 49045438434843
@@ -154,6 +169,8 @@ class MyTestCase(TestCase):
         pipe.setup(**param_3_3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
         image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
+        self.assertEquals(image.width, img.width)
+        self.assertEquals(image.height, img.height)
         image.save('test_img2img_basic.png')
         pipe.setup(**param_7_6)
         image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator(pipe.pipe.device).manual_seed(seed)))
@@ -165,6 +182,8 @@ class MyTestCase(TestCase):
         diff = self.compute_diff(image2, image)
         # check that difference is small
         self.assertLess(diff, 1)
+        self.assertEqual(image.width, img.width)
+        self.assertEqual(image.height, img.height)
 
     @unittest.skipIf(not found_models(), "can't run on tiny version of SD")
     def test_lpw(self):
@@ -216,14 +235,19 @@ class MyTestCase(TestCase):
     def test_controlnet(self):
         model = self.get_model()
         # create pipe
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline, model_type=self.model_type())
-        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
+        pipe = CIm2ImPipe(model, model_type=self.model_type(), ctypes=['soft'])
+        dw, dh = 1, -1
+        imgpth = self.get_ref_image(dw, dh)
+        pipe.setup(imgpth, cscales=[0.3], guidance_scale=7, scheduler="DPMSolverMultistepScheduler", steps=5)
         seed = 49045438434843
-        params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
+        params = dict(prompt="cube planet minecraft style",
                       negative_prompt="spherical",
                       generator=torch.Generator(pipe.pipe.device).manual_seed(seed))
         image = pipe.gen(params)
-        image.save("cube_test.png")
+        image.save("mech_test.png")
+        img_ref = PIL.Image.open(imgpth)
+        self.assertEqual(image.width, img_ref.width)
+        self.assertEqual(image.height, img_ref.height)
 
         # generate with different scheduler
         params.update(scheduler="DDIMScheduler")
@@ -263,8 +287,8 @@ class TestFlux(TestCase):
         device = torch.device('cpu', 0)
         # create pipe
         offload = 0 if torch.cuda.is_available() else None
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline, 
-                             model_type=self.model_type(), 
+        pipe = Prompt2ImPipe(model, pipe=self._pipeline,
+                             model_type=self.model_type(),
                              device=device, offload_device=offload)
         pipe.setup(width=512, height=512, guidance_scale=7, scheduler="FlowMatchEulerDiscreteScheduler", steps=5)
         seed = 49045438434843
