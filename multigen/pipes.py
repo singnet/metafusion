@@ -1,19 +1,21 @@
 import importlib
 import logging
 from enum import Enum
+from collections import defaultdict
+import os
+import copy
+from typing import Optional, Type, List
 
 import torch
 
 from PIL import Image, ImageFilter
 import cv2
-import os
-import copy
 import numpy as np
-from typing import Optional, Type
+
 from diffusers import AutoPipelineForImage2Image, AutoPipelineForText2Image, AutoPipelineForInpainting
 from diffusers import DPMSolverMultistepScheduler
-from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DiffusionPipeline, StableDiffusionXLPipeline, StableDiffusionXLImg2ImgPipeline
-from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler, StableDiffusionXLControlNetPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DiffusionPipeline, StableDiffusionXLPipeline, StableDiffusionXLImg2ImgPipeline, FluxImg2ImgPipeline
+from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler, StableDiffusionXLControlNetPipeline, FluxControlNetImg2ImgPipeline, FluxControlNetModel
 from diffusers import StableDiffusionControlNetInpaintPipeline, StableDiffusionXLControlNetInpaintPipeline, DDIMScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers import StableDiffusionXLControlNetImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline
@@ -68,7 +70,7 @@ class BasePipe:
     """
     _class = None
     _classxl = None
-    _flux = FluxPipeline
+    _classflux = FluxPipeline
 
     def __init__(self, model_id: str,
                  sd_pipe_class: Optional[Type[DiffusionPipeline]] = None,
@@ -314,10 +316,10 @@ class BasePipe:
                 logging.warning('negative prompt is not supported by flux!')
 
         if self.lpw:
-            kwargs.setdefault('negative_prompt', None)
-            kwargs.setdefault('clip_skip', None)
             lora_scale = kwargs.get('cross_attention_kwargs', dict()).get("scale", None)
             if self.model_type == ModelType.SDXL:
+                kwargs.setdefault('negative_prompt', None)
+                kwargs.setdefault('clip_skip', None)
                 # we can override pipe parameters
                 # so we update kwargs with inputs after pipe_params
                 kwargs.update(inputs)
@@ -333,6 +335,8 @@ class BasePipe:
                 kwargs['pooled_prompt_embeds'] = pooled_prompt_embeds
                 kwargs['negative_pooled_prompt_embeds'] = negative_pooled_prompt_embeds
             elif self.model_type == ModelType.SD:
+                kwargs.setdefault('negative_prompt', None)
+                kwargs.setdefault('clip_skip', None)
                 prompt_embeds, negative_prompt_embeds = self.get_prompt_embeds(
                     prompt=kwargs.pop('prompt'),
                     negative_prompt=kwargs.pop('negative_prompt'),
@@ -404,7 +408,7 @@ class Im2ImPipe(BasePipe):
     _autopipeline = AutoPipelineForImage2Image
     _class = StableDiffusionImg2ImgPipeline
     _classxl = StableDiffusionXLImg2ImgPipeline
-    _flux = None # not implemented yet
+    _classflux = FluxImg2ImgPipeline
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, **args):
         super().__init__(model_id=model_id, pipe=pipe, **args)
@@ -624,10 +628,12 @@ class Cond2ImPipe(BasePipe):
     _class = StableDiffusionControlNetImg2ImgPipeline
     _classxl = StableDiffusionXLControlNetImg2ImgPipeline
     _autopipeline = DiffusionPipeline
+    _classflux = FluxControlNetImg2ImgPipeline
 
     # TODO: set path
     cpath = "./models-cn/"
     cpathxl = "./models-cn-xl/"
+    cpathflux = "./models-cn-flux/"
 
     cmodels = {
         "canny": "sd-controlnet-canny",
@@ -651,7 +657,7 @@ class Cond2ImPipe(BasePipe):
         "qr": "controlnet-qr-pattern-sdxl",
     }
 
-    cond_scales_defaults_xl = {
+    cond_scales_defaults_xl = defaultdict(lambda:0.8, {
         "pose": 1.0,
         "soft": 0.95, #0.5
         "canny": 0.75,
@@ -659,9 +665,9 @@ class Cond2ImPipe(BasePipe):
         "depth": 0.5,
         "inpaint": 1.0,
         "qr": 0.5
-    }
+    })
 
-    cond_scales_defaults = {
+    cond_scales_defaults = defaultdict(lambda:0.8, {
         "canny": 0.75,
         "pose": 1.0,
         "ip2p": 0.5,
@@ -671,10 +677,14 @@ class Cond2ImPipe(BasePipe):
         "depth": 0.5,
         "inpaint": 1.0,
         "qr": 1.5
-    }
+    })
+    
+    cond_scales_defaults_flux = defaultdict(lambda: 0.8, 
+                                            {"canny-dev": 0.6})
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=None, **args):
+                 ctypes=["soft"], cnets: Optional[List[ControlNetModel]]=None, 
+                 cnet_ids: Optional[List[str]]=None, model_type=None, **args):
         """
         Constructor
 
@@ -683,6 +693,12 @@ class Cond2ImPipe(BasePipe):
                 Path or identifier of the model to load.
             pipe (StableDiffusion(XL)ControlNetPipeline, *optional*):
                 An instance of the pipeline to use. If provided, `model_id` won't be used for loading.
+            ctypes (List[str], *optional*):
+                List of controlnet types to load, the argument is ignored if cnets of cnet_ids is provided
+            cnets (List[ControlNetModel], *optional*):
+                List of ControlNet instances
+            cnet_ids (List[str], *optional*):
+                List of ids or path to load controlnets
             **args:
                 Additional arguments passed to the `BasePipe` constructor.
 
@@ -692,48 +708,70 @@ class Cond2ImPipe(BasePipe):
             ctypes = [ctypes]
         self.ctypes = ctypes
         self._condition_image = None
-        dtype = torch.float32
-        if torch.cuda.is_available():
-            dtype = torch.float16
-        dtype =  args.get('torch_type', dtype)
         if pipe is None:
+            cnets = []
             if model_id.endswith('.safetensors'):
                 if self.model_type is None:
                     raise RuntimeError(f"model type is not specified for safetensors file {model_id}")
-                cpath = self.get_cpath()
-                cmodels = self.get_cmodels()
-                cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype) for c in ctypes]
+                cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None))
                 super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
             else:
-                cnets = []
                 super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
                 # determine model type from pipe
                 if isinstance(self.pipe, (self._classxl, StableDiffusionXLPipeline)):
                     t_model_type = ModelType.SDXL
                 elif isinstance(self.pipe, (self._class, StableDiffusionPipeline)):
                     t_model_type = ModelType.SD
+                elif isinstance(self.pipe, (self._classflux, FluxPipeline, FluxImg2ImgPipeline)):
+                    t_model_type = ModelType.FLUX
                 else:
                     raise RuntimeError(f"Unexpected model type {type(self.pipe)}")
                 self.model_type = t_model_type
-                cpath = self.get_cpath()
-                cmodels = self.get_cmodels()
-                cnets = [ControlNetModel.from_pretrained(cpath+cmodels[c], torch_dtype=dtype).to(self.pipe.device) for c in ctypes]
+                cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None))
                 if self.model_type == ModelType.SDXL:
                     self.pipe = self._classxl.from_pipe(self.pipe, controlnet=cnets)
+                elif self.model_type == ModelType.FLUX:
+                    self.pipe = self._classflux.from_pipe(self.pipe, controlnet=cnets[0])
                 else:
                     self.pipe = self._class.from_pipe(self.pipe, controlnet=cnets)
+            for cnet in cnets:
+                cnet.to(self.pipe.dtype)
         else:
             # don't load anything, just reuse pipe
             super().__init__(model_id=model_id, pipe=pipe, **args)
-        # FIXME: do we need to setup this specific scheduler here?
-        #        should we pass its name in setup to super?
-        self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
+
+    def _load_cnets(self, cnets, cnet_ids, offload_device=None):
+        if self.model_type == ModelType.FLUX:
+            ControlNet = FluxControlNetModel
+        else:
+            ControlNet = ControlNetModel
+        if cnets:
+            return cnets
+        cnets = []
+        if cnet_ids:
+            for m in cnet_ids:
+                cnets.append(ControlNet.from_pretrained(m))
+        else:
+            cpath = self.get_cpath()
+            cmodels = self.get_cmodels()
+            for c in self.ctypes:
+                if c in cmodels:
+                    cnets.append(ControlNet.from_pretrained(cpath+cmodels[c]))
+                else:
+                    cnets.append(ControlNet.from_pretrained(c, torch_dtype=torch_dtype))
+        if offload_device is not None:
+            dev = torch.device('cuda', offload_device)
+            for cnet in cnets:
+                cnet.to(dev)
+        return cnets
 
     def get_cmodels(self):
         if self.model_type == ModelType.SDXL:
             cmodels = self.cmodelsxl
         elif self.model_type == ModelType.SD:
             cmodels = self.cmodels
+        elif self.model_type == ModelType.FLUX:
+            raise NotImplementedError("predefined controlnets are not supported for flux")
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cmodels
@@ -788,12 +826,17 @@ class Cond2ImPipe(BasePipe):
             "guess_mode": guess_mode,
             "strength": strength,
         })
+        if self.model_type == ModelType.FLUX:
+            # not yet supported
+            self.pipe_params.pop('guess_mode')
 
     def get_default_cond_scales(self):
         if self.model_type == ModelType.SDXL:
             cond_scales = self.cond_scales_defaults_xl
         elif self.model_type == ModelType.SD:
             cond_scales = self.cond_scales_defaults
+        elif self.model_type == ModelType.FLUX:
+            cond_scales = self.cond_scales_defaults_flux
         else:
             raise ValueError(f"Unknown controlnet type: {self.model_type}")
         return cond_scales
@@ -818,7 +861,6 @@ class Cond2ImPipe(BasePipe):
             PIL.Image.Image: The generated image.
         """
         inputs = self.prepare_inputs(inputs)
-        inputs.update(self.pipe_params)
         inputs.update({"image": self._input_image,
                        "control_image": self._condition_image})
         image = self.pipe(**inputs).images[0]
@@ -833,7 +875,7 @@ class CIm2ImPipe(Cond2ImPipe):
     The processing of the input image depends on the specified conditioning type(s).
     """
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], model_type=ModelType.SD, **args):
+                 ctypes=["soft"], model_type=None, **args):
 
         """
         Initialize the CIm2ImPipe.
