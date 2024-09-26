@@ -13,13 +13,14 @@ import cv2
 import numpy as np
 
 from diffusers import AutoPipelineForImage2Image, AutoPipelineForText2Image, AutoPipelineForInpainting
+from diffusers import StableDiffusionInpaintPipeline, StableDiffusionXLInpaintPipeline
 from diffusers import DPMSolverMultistepScheduler
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DiffusionPipeline, StableDiffusionXLPipeline, StableDiffusionXLImg2ImgPipeline, FluxImg2ImgPipeline
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler, StableDiffusionXLControlNetPipeline, FluxControlNetImg2ImgPipeline, FluxControlNetModel
 from diffusers import StableDiffusionControlNetInpaintPipeline, StableDiffusionXLControlNetInpaintPipeline, DDIMScheduler
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers import StableDiffusionXLControlNetImg2ImgPipeline, StableDiffusionControlNetImg2ImgPipeline
-from diffusers import FluxPipeline
+from diffusers import FluxPipeline, FluxInpaintPipeline, FluxControlNetInpaintPipeline
 
 from .pipelines.masked_stable_diffusion_img2img import MaskedStableDiffusionImg2ImgPipeline
 from .pipelines.masked_stable_diffusion_xl_img2img import MaskedStableDiffusionXLImg2ImgPipeline
@@ -276,6 +277,8 @@ class BasePipe:
         if 'timestep_spacing' in args:
             self.pipe.scheduler = self.pipe.scheduler.from_config(self.pipe.scheduler.config, timestep_spacing = args['timestep_spacing'])
             args.pop('timestep_spacing')
+        if 'guidance_scale' in args:
+            self.pipe_params['guidance_scale'] = args['guidance_scale']
         for lora in loras:
             self.load_lora(lora)
 
@@ -504,6 +507,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
 
     _class = MaskedStableDiffusionImg2ImgPipeline
     _classxl = MaskedStableDiffusionXLImg2ImgPipeline
+    _classflux = FluxInpaintPipeline
     _autopipeline = DiffusionPipeline
 
     def __init__(self, *args, pipe: Optional[StableDiffusionImg2ImgPipeline] = None, lpw=False, model_type=None, **kwargs):
@@ -517,8 +521,8 @@ class MaskedIm2ImPipe(Im2ImPipe):
         """
         super().__init__(*args, pipe=pipe, lpw=lpw, model_type=model_type, **kwargs)
         # convert loaded pipeline if necessary
-        if not isinstance(self.pipe, (self._class, self._classxl)):
-            self.pipe = self._from_pipe(self.pipe, **kwargs)
+        if not isinstance(self.pipe, (self._class, self._classxl, self._classflux)):
+            self.pipe = self._from_pipe(self.pipe)
         self._mask = None
         self._image_painted = None
         self._original_image = None
@@ -530,18 +534,20 @@ class MaskedIm2ImPipe(Im2ImPipe):
             return self._classxl(**pipe.components, **args)
         elif 'StableDiffusionPipeline' in str(cls):
             return self._class(**pipe.components, **args)
+        elif 'Flux' in str(cls):
+            return self._classflux(**pipe.components, **args)
         raise RuntimeError(f"can't load pipeline from type {cls}")
 
-    def setup(self, original_image=None, image_painted=None, mask=None, blur=4,
+    def setup(self, image=None, image_painted=None, mask=None, blur=4,
               blur_compose=4, sample_mode='sample', scale=None, **kwargs):
         """
         Set up the pipeline.
 
         Args:
-           original_image (str or Image.Image, *optional*):
+           image (str or Image.Image, *optional*):
                 The original image. Defaults to None.
            image_painted (str or Image.Image, *optional*):
-                modified version of original_image, this parameter should be skipped if mask is passed. Defaults to None.
+                modified version of image, this parameter should be skipped if mask is passed. Defaults to None.
            mask (array-like or Image.Image, *optional*):
                The mask. Defaults to None. If None it will be computed from the difference
                between original_image and image_painted
@@ -555,6 +561,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
                 The scale factor for resizing of the input image. Defaults to None.
            **kwargs: Additional keyword arguments passed to Im2ImPipe constructor.
         """
+        original_image = image
         self._original_image = Image.open(original_image) if isinstance(original_image, str) else original_image
         self._image_painted = Image.open(image_painted) if isinstance(image_painted, str) else image_painted
 
@@ -589,8 +596,8 @@ class MaskedIm2ImPipe(Im2ImPipe):
         pil_mask = mask
         if not isinstance(self._mask, Image.Image):
             pil_mask = Image.fromarray(mask)
-            if pil_mask.mode != "L":
-                pil_mask = pil_mask.convert("L")
+        if pil_mask.mode != "L":
+            pil_mask = pil_mask.convert("L")
         pil_mask = util.pad_image_to_multiple_of_8(pil_mask)
         self._mask = pil_mask
         self._mask_blur = self.blur_mask(pil_mask, blur)
@@ -605,13 +612,17 @@ class MaskedIm2ImPipe(Im2ImPipe):
 
     def gen(self, inputs):
         inputs = dict(**inputs)
-        inputs.update(mask=self._mask)
-        if 'sample_mode' not in inputs:
-            inputs['sample_mode'] = self._sample_mode
-
         original_image = self._original_image
         original_image = np.array(original_image)
-        inputs['original_image'] = original_image / original_image.max()
+        normalised = original_image / original_image.max()
+        if self.model_type == ModelType.FLUX:
+            inputs.update(mask_image=self._mask, image=original_image, width=self._original_image.width,
+                          height=self._original_image.height)
+        else:
+            inputs.update(mask=self._mask)
+            if 'sample_mode' not in inputs:
+                inputs['sample_mode'] = self._sample_mode
+            inputs['original_image'] = normalised
         img_gen = super().gen(inputs)
 
         # compose with original using mask
@@ -986,8 +997,12 @@ class CIm2ImPipe(Cond2ImPipe):
         return condition_image
 
 
+class InpaintingPipe(MaskedIm2ImPipe):
+    pass
+
+
 # TODO: does it make sense to inherint it from Cond2Im or CIm2Im ?
-class InpaintingPipe(BasePipe):
+class CInpaintingPipe(BasePipe):
     """
     A pipeline for inpainting images using ControlNet models.
     """
@@ -1062,7 +1077,6 @@ class InpaintingPipe(BasePipe):
                 The generated inpainted image.
         """
         inputs = self.prepare_inputs(inputs)
-        inputs.update(self.pipe_params)
         inputs.update({
             "image": self._init_image,
             "mask_image": self._mask_image,
