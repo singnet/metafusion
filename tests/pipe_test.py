@@ -162,9 +162,9 @@ class MyTestCase(TestCase):
         scheduler = "EulerAncestralDiscreteScheduler"
         seed = 49045438434843
         blur = 48
-        param_3_3 = dict(original_image=img, image_painted=img_paint, strength=0.96,
+        param_3_3 = dict(image=img, image_painted=img_paint, strength=0.96,
                scheduler=scheduler, clip_skip=0, blur=blur, blur_compose=3, steps=5, guidance_scale=3.3)
-        param_7_6 = dict(original_image=img, image_painted=img_paint, strength=0.96,
+        param_7_6 = dict(image=img, image_painted=img_paint, strength=0.96,
                scheduler=scheduler, clip_skip=0, blur=blur, blur_compose=3, steps=5, guidance_scale=7.6)
         pipe.setup(**param_3_3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])

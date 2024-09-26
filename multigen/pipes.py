@@ -747,6 +747,8 @@ class Cond2ImPipe(BasePipe):
                     self.pipe = self._class.from_pipe(self.pipe, controlnet=cnets)
             for cnet in cnets:
                 cnet.to(self.pipe.dtype)
+                if 'offload_device' not in args:
+                    cnet.to(self.pipe.device)
         else:
             # don't load anything, just reuse pipe
             super().__init__(model_id=model_id, pipe=pipe, **args)

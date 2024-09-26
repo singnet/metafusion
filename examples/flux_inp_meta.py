@@ -4,8 +4,7 @@ from diffusers import FluxInpaintPipeline
 from multigen.pipes import InpaintingPipe
 from diffusers.utils import load_image, make_image_grid
 
-
-dev_cuda = torch.device('cuda', 0)
+# requires https://huggingface.co/black-forest-labs/FLUX.1-dev
 model_id = "/home/imgen/models/flux-1-dev"
 pipe = InpaintingPipe(model_id, 
         device=torch.device('cpu', 0), offload_device=0, torch_dtype=torch.bfloat16)
