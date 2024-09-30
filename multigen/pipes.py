@@ -102,6 +102,7 @@ class BasePipe:
         """
         if device is None:
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        pipe_passed = pipe is not None
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
@@ -125,7 +126,8 @@ class BasePipe:
             if mt != model_type:
                 raise RuntimeError(f"passed model type {self.model_type} doesn't match actual type {mt}")
 
-        self._initialize_pipe(device, offload_device)
+        if not pipe_passed:
+            self._initialize_pipe(device, offload_device)
         self.lpw = lpw
         self._loras = []
 
@@ -773,9 +775,13 @@ class Cond2ImPipe(BasePipe):
                 else:
                     cnets.append(ControlNet.from_pretrained(c, torch_dtype=torch_dtype))
         if offload_device is not None:
+            # controlnet should be on the same device where main model is working
             dev = torch.device('cuda', offload_device)
+            logging.debug('moving cnets to offload device {dev}')
             for cnet in cnets:
                 cnet.to(dev)
+        else:
+            logging.debug('offload device is None')
         return cnets
 
     def get_cmodels(self):
@@ -832,6 +838,8 @@ class Cond2ImPipe(BasePipe):
         self._input_image = [image]
         if cscales is None:
             cscales = [self.get_default_cond_scales()[c] for c in self.ctypes]
+        if self.model_type == ModelType.FLUX and hasattr(cscales, '__len__'):
+            cscales = cscales[0] # multiple controlnets are not yet supported
         self.pipe_params.update({
             "width": image.size[0] if width is None else width,
             "height": image.size[1] if height is None else height,
