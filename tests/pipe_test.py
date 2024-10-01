@@ -261,6 +261,8 @@ class MyTestCase(TestCase):
             pipe = CIm2ImPipe(model, model_type=self.model_type(), cnet_ids=[canny_path], ctypes=['soft'], **self.device_args)
         else:
             pipe = CIm2ImPipe(model, model_type=self.model_type(), ctypes=['soft'], **self.device_args)
+        
+        logging.info(f"pipe's device {pipe.pipe.device}")
         dw, dh = 1, -1
         imgpth = self.get_ref_image(dw, dh)
         pipe.setup(imgpth, cscales=[0.3], guidance_scale=7, scheduler=self.schedulers[0], steps=5)

@@ -157,6 +157,7 @@ class BasePipe:
     def _initialize_pipe(self, device, offload_device):
         # sometimes text encoder is on a different device
         # if self.pipe.device != device:
+        logging.debug(f"initialising pipe to device {device}: offload_device {offload_device}")
         self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
