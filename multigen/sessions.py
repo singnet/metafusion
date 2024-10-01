@@ -3,6 +3,7 @@ import os
 import json
 from . import util
 from .prompting import Cfgen
+import logging
 
 
 class GenSession:
@@ -84,12 +85,14 @@ class GenSession:
         # collecting images to return if requested or images are not saved
         if not save_img or force_collect:
             images = []
+        logging.info(f"add count = {add_count}")
+        jk = 0
         for inputs in self.confg:
             self.last_index = self.confg.count - 1
             self.last_conf = {**inputs}
             # TODO: multiple inputs?
             inputs['generator'] = torch.Generator().manual_seed(inputs['generator'])
-
+            logging.debug("start generation")
             image = self.pipe.gen(inputs)
             if save_img:
                 self.last_img_name = self.get_last_file_prefix() + ".png"
@@ -103,5 +106,8 @@ class GenSession:
             if save_img and not drop_cfg:
                 self.save_last_conf()
             if callback is not None:
+                logging.debug("call callback after generation")
                 callback()
+            jk += 1
+        logging.debug(f"done iteration {jk}")
         return images
