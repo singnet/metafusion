@@ -58,16 +58,16 @@ class ServiceThread(ServiceThreadBase):
             if model_type == ModelType.SDXL:
                 cls = pipe_class._classxl
             elif model_type == ModelType.FLUX:
-                cls = pipe_class._flux
+                # use offload by default for now
+                cls = pipe_class._classflux
                 if device.type == 'cuda':
                     offload_device = device.index
-                    device = torch.device('cpu')
+                    device = torch.device('cpu', 0)
             else:
                 cls = pipe_class._class
             pipeline = self._loader.load_pipeline(cls, model_id, torch_dtype=torch.bfloat16, 
                                                   device=device)
             self.logger.debug(f'requested {cls} {model_id} on device {device}, got {pipeline.device}')
-            assert pipeline.device == device
             pipe = pipe_class(model_id, pipe=pipeline, device=device, offload_device=offload_device)
             if offload_device is None:
                 assert pipeline.device == device
@@ -164,7 +164,8 @@ class ServiceThread(ServiceThreadBase):
                 data['finish_callback']()
         except (RuntimeError, TypeError, NotImplementedError) as e:
             self.logger.error("error in generation", exc_info=e)
-            self.logger.error(f"offload_device {pipe.pipe._offload_gpu_id}")
+            if hasattr(pipe.pipe, '_offload_gpu_id'):
+                self.logger.error(f"offload_device {pipe.pipe._offload_gpu_id}")
             if 'finish_callback' in data:
                 data['finish_callback']("Can't generate image due to error")
         except Exception as e:
