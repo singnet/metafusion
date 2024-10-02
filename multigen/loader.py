@@ -45,6 +45,8 @@ def weightshare_copy(pipe):
         obj = getattr(copy, key)
         if hasattr(obj, 'load_state_dict'):
             obj.load_state_dict(getattr(pipe, key).state_dict(), assign=True)
+    # some buffers might not be transfered from pipe to copy
+    copy.to(pipe.device)
     return copy
 
 
