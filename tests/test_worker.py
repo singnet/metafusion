@@ -12,8 +12,6 @@ from multigen.pipes import Prompt2ImPipe
 from multigen.worker import ServiceThread
 from multigen.log import setup_logger
 
-setup_logger()
-
 
 
 nprompt = "jpeg artifacts, blur, distortion, watermark, signature, extra fingers, fewer fingers, lowres, bad hands, duplicate heads, bad anatomy, bad crop"
@@ -86,4 +84,5 @@ class WorkerTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    setup_logger('test_worker.log')
     unittest.main()

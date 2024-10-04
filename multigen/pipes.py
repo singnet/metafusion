@@ -102,6 +102,7 @@ class BasePipe:
         """
         if device is None:
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        pipe_passed = pipe is not None
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
@@ -125,7 +126,8 @@ class BasePipe:
             if mt != model_type:
                 raise RuntimeError(f"passed model type {self.model_type} doesn't match actual type {mt}")
 
-        self._initialize_pipe(device, offload_device)
+        if not pipe_passed:
+            self._initialize_pipe(device, offload_device)
         self.lpw = lpw
         self._loras = []
 
@@ -155,6 +157,7 @@ class BasePipe:
     def _initialize_pipe(self, device, offload_device):
         # sometimes text encoder is on a different device
         # if self.pipe.device != device:
+        logging.debug(f"initialising pipe to device {device}: offload_device {offload_device}")
         self.pipe.to(device)
         # self.pipe.enable_attention_slicing()
         # self.pipe.enable_vae_slicing()
@@ -164,6 +167,7 @@ class BasePipe:
         if self.model_type == ModelType.FLUX:
             if offload_device is not None:
                 self.pipe.enable_sequential_cpu_offload(offload_device)
+                logging.debug(f'enable_sequential_cpu_offload for pipe dtype {self.pipe.dtype}')
         else:
             try:
                 import xformers
@@ -172,19 +176,21 @@ class BasePipe:
                 logging.warning("xformers not found, can't use efficient attention")
 
     def _load_pipeline(self, sd_pipe_class, model_type, args):
+        logging.debug(f"loading pipeline from {self._model_id} with {args}")
         if sd_pipe_class is None:
             if self._model_id.endswith('.safetensors'):
                 if model_type is None:
                     raise RuntimeError(f"model_type is not specified for safetensors file {self._model_id}")
                 pipe_class = self._class if model_type == ModelType.SD else self._classxl
-                return pipe_class.from_single_file(self._model_id, **args)
+                result = pipe_class.from_single_file(self._model_id, **args)
             else:
-                return self._autopipeline.from_pretrained(self._model_id, **args)
+                result = self._autopipeline.from_pretrained(self._model_id, **args)
         else:
             if self._model_id.endswith('.safetensors'):
-                return sd_pipe_class.from_single_file(self._model_id, **args)
+                result = sd_pipe_class.from_single_file(self._model_id, **args)
             else:
-                return sd_pipe_class.from_pretrained(self._model_id, **args)
+                result = sd_pipe_class.from_pretrained(self._model_id, **args)
+        return result
 
     @property
     def scheduler(self):
@@ -724,7 +730,7 @@ class Cond2ImPipe(BasePipe):
             if model_id.endswith('.safetensors'):
                 if self.model_type is None:
                     raise RuntimeError(f"model type is not specified for safetensors file {model_id}")
-                cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None))
+                cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None), args.get('torch_dtype', None))
                 super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
             else:
                 super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
@@ -738,22 +744,26 @@ class Cond2ImPipe(BasePipe):
                 else:
                     raise RuntimeError(f"Unexpected model type {type(self.pipe)}")
                 self.model_type = t_model_type
-                cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None))
+                logging.debug(f"from_pipe source dtype {self.pipe.dtype}")
+                cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None), self.pipe.dtype)
+                prev_dtype = self.pipe.dtype
                 if self.model_type == ModelType.SDXL:
                     self.pipe = self._classxl.from_pipe(self.pipe, controlnet=cnets)
                 elif self.model_type == ModelType.FLUX:
                     self.pipe = self._classflux.from_pipe(self.pipe, controlnet=cnets[0])
                 else:
                     self.pipe = self._class.from_pipe(self.pipe, controlnet=cnets)
+                logging.debug(f"after from_pipe result dtype {self.pipe.dtype}")
             for cnet in cnets:
-                cnet.to(self.pipe.dtype)
+                cnet.to(prev_dtype)
+                logging.debug(f'moving cnet {id(cnet)} to self.pipe.dtype {prev_dtype}')
                 if 'offload_device' not in args:
                     cnet.to(self.pipe.device)
         else:
             # don't load anything, just reuse pipe
             super().__init__(model_id=model_id, pipe=pipe, **args)
 
-    def _load_cnets(self, cnets, cnet_ids, offload_device=None):
+    def _load_cnets(self, cnets, cnet_ids, offload_device=None, dtype=None):
         if self.model_type == ModelType.FLUX:
             ControlNet = FluxControlNetModel
         else:
@@ -773,9 +783,18 @@ class Cond2ImPipe(BasePipe):
                 else:
                     cnets.append(ControlNet.from_pretrained(c, torch_dtype=torch_dtype))
         if offload_device is not None:
+            # controlnet should be on the same device where main model is working
             dev = torch.device('cuda', offload_device)
+            logging.debug(f'moving cnets to offload device {dev}')
             for cnet in cnets:
                 cnet.to(dev)
+        else:
+            logging.debug('offload device is None')
+        for cnet in cnets:
+            logging.debug(f"cnet dtype {cnet.dtype}")
+            if dtype is not None:
+                logging.debug(f"changing to {dtype}")
+                cnet.to(dtype)
         return cnets
 
     def get_cmodels(self):
@@ -832,6 +851,8 @@ class Cond2ImPipe(BasePipe):
         self._input_image = [image]
         if cscales is None:
             cscales = [self.get_default_cond_scales()[c] for c in self.ctypes]
+        if self.model_type == ModelType.FLUX and hasattr(cscales, '__len__'):
+            cscales = cscales[0] # multiple controlnets are not yet supported
         self.pipe_params.update({
             "width": image.size[0] if width is None else width,
             "height": image.size[1] if height is None else height,
@@ -905,6 +926,9 @@ class CIm2ImPipe(Cond2ImPipe):
                 Additional arguments passed to the Cond2ImPipe constructor.
         """
         super().__init__(model_id=model_id, pipe=pipe, ctypes=ctypes, model_type=model_type, **args)
+        logging.debug("CIm2Im backend pipe was constructed")
+        logging.debug(f"self.pipe.dtype = {self.pipe.dtype}")
+        logging.debug(f"self.pipe.controlnet.dtype = {self.pipe.controlnet.dtype}")
         self.processor = None
         self.body_estimation = None
         self.draw_bodypose = None
