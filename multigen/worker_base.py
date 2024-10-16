@@ -7,7 +7,7 @@ import random
 import yaml
 from pathlib import Path
 import logging
-from .pipes import Prompt2ImPipe, MaskedIm2ImPipe, Cond2ImPipe, Im2ImPipe
+from .pipes import Prompt2ImPipe, MaskedIm2ImPipe, Cond2ImPipe, Im2ImPipe, InpaintingPipe
 from .loader import Loader
 
 
@@ -95,11 +95,6 @@ class ServiceThreadBase(threading.Thread):
     def queue_gen(self, **args):
         self.logger.info("REQUESTED FOR QUEUE: " + str(args))
         with self._lock:
-            if args["session_id"] not in self.sessions:
-                return { "error": "Session is not open" }
-           # for q in self.queue:
-           #     if q["session_id"] == args["session_id"]:
-           #         return { "error": "The job for this session already exists" }
             a = {**args}
             a["count"] = int(a["count"])
             if a["count"] <= 0:

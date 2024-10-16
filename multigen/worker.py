@@ -3,6 +3,7 @@ import random
 import time
 import concurrent
 from queue import Empty
+import PIL
 
 from .worker_base import ServiceThreadBase
 from .prompting import Cfgen
@@ -62,7 +63,7 @@ class ServiceThread(ServiceThreadBase):
                 cls = pipe_class._classflux
                 if device.type == 'cuda':
                     offload_device = device.index
-                    device = torch.device('cpu', 0)
+                    device = torch.device('cpu')
             else:
                 cls = pipe_class._class
             pipeline = self._loader.load_pipeline(cls, model_id, torch_dtype=torch.bfloat16, 
@@ -110,8 +111,10 @@ class ServiceThread(ServiceThreadBase):
         device = None
         # keep the job in the queue until complete
         try:
+            sess = data.get('session', None)
             session_id = data["session_id"]
-            sess = self.sessions[session_id]
+            if sess is None:
+                sess = self.sessions[session_id]
             sess['status'] ='running'
             self.logger.info("GENERATING: " + str(data))
             if 'start_callback' in data:
@@ -132,7 +135,9 @@ class ServiceThread(ServiceThreadBase):
                 raise RuntimeError(f"unexpected model type {mt}")
             pipe = self.get_pipeline(pipe_name, model_id, model_type, cnet=data.get('cnet', None))
             device = pipe.pipe.device
-            offload_device = pipe.offload_gpu_id
+            offload_device = None
+            if hasattr(pipe, 'offload_gpu_id'):
+                offload_device = pipe.offload_gpu_id
             self.logger.debug(f'running job on {device} offload {offload_device}')
             if device.type in  ['cuda', 'meta']:
                 with self._lock:
@@ -143,12 +148,15 @@ class ServiceThread(ServiceThreadBase):
             class_name = str(pipe.__class__)
             self.logger.debug(f'got pipeline {class_name}')
 
-            images = data['images']
-            if 'MaskedIm2ImPipe' in class_name:
+            images = data.get('images', None)
+            if images and 'MaskedIm2ImPipe' in class_name:
                 pipe.setup(**data, original_image=str(images[0]),
                         image_painted=str(images[1]))
-            elif any([x in class_name for x in ('Im2ImPipe', 'Cond2ImPipe')]):
-                pipe.setup(**data, fimage=str(images[0]))
+            elif images and any([x in class_name for x in ('Im2ImPipe', 'Cond2ImPipe')]):
+                if isinstance(images[0], PIL.Image.Image):
+                    pipe.setup(**data, fimage=None, image=images[0])
+                else:
+                    pipe.setup(**data, fimage=str(images[0]))
             else:
                 pipe.setup(**data)
             # TODO: add negative prompt to parameters
@@ -156,7 +164,10 @@ class ServiceThread(ServiceThreadBase):
             nprompt = data.get('nprompt', nprompt_default)
             seeds = data.get('seeds', None)
             self.logger.debug(f"offload_device {pipe.offload_gpu_id}")
-            gs = GenSession(self.get_image_pathname(data["session_id"], None),
+            directory = data.get('gen_dir', None)
+            if directory is None:
+                directory = self.get_image_pathname(data["session_id"], None)
+            gs = GenSession(directory,
                             pipe, Cfgen(data["prompt"], nprompt, seeds=seeds))
             gs.gen_sess(add_count = data["count"],
                         callback = lambda: _update(sess, data, gs))

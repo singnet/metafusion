@@ -18,7 +18,7 @@ def setup_logger(path='log_file.log'):
     
     ch.addFilter(thread_id_filter)
     fh.addFilter(thread_id_filter)
-    formatter = logging.Formatter('%(asctime)s - %(thread)d - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(thread)d - %(levelname)s - %(funcName)20s() - %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
     
