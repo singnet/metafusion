@@ -123,7 +123,7 @@ class MyTestCase(TestCase):
         # load inpainting pipe
         cls = classes[model_type]
         pipeline = loader.load_pipeline(cls, model_id, **self.device_args)
-        inpaint = MaskedIm2ImPipe(model_id, pipe=pipeline)
+        inpaint = MaskedIm2ImPipe(model_id, pipe=pipeline,  **self.device_args)
 
         
         prompt_classes = self.get_cls_by_type(Prompt2ImPipe)
@@ -138,7 +138,7 @@ class MyTestCase(TestCase):
                 device = torch.device('cpu', 0)
             device_args['device'] = device
         pipeline = loader.load_pipeline(cls, model_id, **device_args)
-        prompt2image = Prompt2ImPipe(model_id, pipe=pipeline)
+        prompt2image = Prompt2ImPipe(model_id, pipe=pipeline, **device_args)
         prompt2image.setup(width=512, height=512, scheduler=self.schedulers[0], clip_skip=2, steps=5)
         if device.type == 'cuda':
             self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
