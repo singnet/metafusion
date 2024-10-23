@@ -173,7 +173,7 @@ class ServiceThread(ServiceThreadBase):
                         callback = lambda: _update(sess, data, gs))
             if 'finish_callback' in data:
                 data['finish_callback']()
-        except (RuntimeError, TypeError, NotImplementedError) as e:
+        except (RuntimeError, TypeError, NotImplementedError, OSError) as e:
             self.logger.error("error in generation", exc_info=e)
             if hasattr(pipe.pipe, '_offload_gpu_id'):
                 self.logger.error(f"offload_device {pipe.pipe._offload_gpu_id}")
