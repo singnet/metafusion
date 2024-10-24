@@ -95,6 +95,8 @@ class ServiceThreadBase(threading.Thread):
     def queue_gen(self, **args):
         self.logger.info("REQUESTED FOR QUEUE: " + str(args))
         with self._lock:
+            if args["session_id"] not in self.sessions:
+                self.logger.debug(str(args["session_id"]) + ' is not found in open sessions')
             a = {**args}
             a["count"] = int(a["count"])
             if a["count"] <= 0:
