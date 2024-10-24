@@ -102,7 +102,6 @@ class BasePipe:
         """
         if device is None:
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        pipe_passed = pipe is not None
         self.pipe = pipe
         self._scheduler = None
         self._hypernets = []
@@ -126,8 +125,7 @@ class BasePipe:
             if mt != model_type:
                 raise RuntimeError(f"passed model type {self.model_type} doesn't match actual type {mt}")
 
-        if not pipe_passed:
-            self._initialize_pipe(device, offload_device)
+        self._initialize_pipe(device, offload_device)
         self.lpw = lpw
         self._loras = []
 
@@ -164,10 +162,11 @@ class BasePipe:
         self.pipe.vae.enable_tiling()
         # --- the best one and seems to be enough ---
         # self.pipe.enable_sequential_cpu_offload()
+        if offload_device is not None:
+            self.pipe.enable_sequential_cpu_offload(offload_device)
+            logging.debug(f'enable_sequential_cpu_offload for pipe dtype {self.pipe.dtype}')
         if self.model_type == ModelType.FLUX:
-            if offload_device is not None:
-                self.pipe.enable_sequential_cpu_offload(offload_device)
-                logging.debug(f'enable_sequential_cpu_offload for pipe dtype {self.pipe.dtype}')
+            pass
         else:
             try:
                 import xformers
@@ -409,6 +408,7 @@ class Prompt2ImPipe(BasePipe):
                 generated image
         """
         kwargs = self.prepare_inputs(inputs)
+        logging.debug("Prompt2ImPipe.gen calling pipe")
         image = self.pipe(**kwargs).images[0]
         return image
 

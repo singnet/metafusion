@@ -123,7 +123,7 @@ class MyTestCase(TestCase):
         # load inpainting pipe
         cls = classes[model_type]
         pipeline = loader.load_pipeline(cls, model_id, **self.device_args)
-        inpaint = MaskedIm2ImPipe(model_id, pipe=pipeline)
+        inpaint = MaskedIm2ImPipe(model_id, pipe=pipeline,  **self.device_args)
 
         
         prompt_classes = self.get_cls_by_type(Prompt2ImPipe)
@@ -138,7 +138,7 @@ class MyTestCase(TestCase):
                 device = torch.device('cpu', 0)
             device_args['device'] = device
         pipeline = loader.load_pipeline(cls, model_id, **device_args)
-        prompt2image = Prompt2ImPipe(model_id, pipe=pipeline)
+        prompt2image = Prompt2ImPipe(model_id, pipe=pipeline, **device_args)
         prompt2image.setup(width=512, height=512, scheduler=self.schedulers[0], clip_skip=2, steps=5)
         if device.type == 'cuda':
             self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
@@ -322,30 +322,6 @@ class TestFlux(MyTestCase):
     @unittest.skip('flux does not need test')
     def test_lpw_turned_off(self):
         pass
-
-    def est_basic_txt2im(self):
-        model = self.get_model()
-        device = torch.device('cpu', 0)
-        # create pipe
-        offload = 0 if torch.cuda.is_available() else None
-        pipe = Prompt2ImPipe(model, pipe=self._pipeline,
-                             model_type=self.model_type(),
-                             device=device, offload_device=offload)
-        pipe.setup(width=512, height=512, guidance_scale=7, scheduler="FlowMatchEulerDiscreteScheduler", steps=5)
-        seed = 49045438434843
-        params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
-                      negative_prompt="spherical",
-                      generator=torch.Generator(device).manual_seed(seed))
-        image = pipe.gen(params)
-        image.save("cube_test.png")
-
-        # generate with different seed
-        params['generator'] = torch.Generator(device).manual_seed(seed + 1)
-        image_ddim = pipe.gen(params)
-        image_ddim.save("cube_test2_dimm.png")
-        diff = self.compute_diff(image_ddim, image)
-        # check that difference is large
-        self.assertGreater(diff, 1000)
 
 
 if __name__ == '__main__':
