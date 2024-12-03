@@ -53,9 +53,18 @@ jobs:
         METAFUSION_MODELS_DIR: models-full
       run: |
         cd tests && python pipe_test.py
+    - name: Test loader
+      env:
+        METAFUSION_MODELS_DIR: models-full
+      run: |
+        cd tests && python test_loader.py
     - name: Test worker 
+      env:
+        METAFUSION_MODELS_DIR: models-full
       run: |
         cd tests && python test_worker.py
     - name: Test worker flux
+      env:
+        METAFUSION_MODELS_DIR: models-full
       run: |
         cd tests && python test_worker_flux.py

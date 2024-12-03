@@ -16,6 +16,8 @@ from base_test import TestCase, found_models
 
 class MyTestCase(TestCase):
 
+    def setUp(self):
+        TestCase.setUp(self)
 
     def test_basic_txt2im(self):
         model = self.get_model()
@@ -105,12 +107,14 @@ class MyTestCase(TestCase):
                scheduler=scheduler, clip_skip=0, blur=blur, blur_compose=3, steps=5, guidance_scale=7.6)
         pipe.setup(**param_3_3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
-        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))
+        image = pipe.gen(dict(prompt="cube planet cartoon style", 
+                              generator=torch.Generator().manual_seed(seed)))
         self.assertEqual(image.width, img.width)
         self.assertEqual(image.height, img.height)
         image.save('test_img2img_basic.png')
         pipe.setup(**param_7_6)
-        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))
+        image1 = pipe.gen(dict(prompt="cube planet cartoon style", 
+                               generator=torch.Generator().manual_seed(seed)))
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
@@ -217,7 +221,6 @@ class TestSDXL(MyTestCase):
         return "hf-internal-testing/tiny-stable-diffusion-xl-pipe"
 
 
-
 class TestFlux(MyTestCase):
 
     def setUp(self):
@@ -225,7 +228,7 @@ class TestFlux(MyTestCase):
         self._pipeline = None
         self.schedulers = ['FlowMatchEulerDiscreteScheduler']
         self.device_args = dict()
-        self.device_args['device'] = torch.device('cpu', 0)
+        self.device_args['device'] = torch.device('cpu')
         if torch.cuda.is_available():
             self.device_args['offload_device'] = 0
 

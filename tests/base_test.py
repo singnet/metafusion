@@ -30,6 +30,7 @@ class TestCase(unittest.TestCase):
         return diff
 
     def setUp(self):
+        super().setUp()
         self._pipeline = None
         self._img_count = 0
         self.schedulers = 'DPMSolverMultistepScheduler', 'DDIMScheduler', 'EulerAncestralDiscreteScheduler'

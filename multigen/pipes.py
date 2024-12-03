@@ -150,7 +150,7 @@ class BasePipe:
         elif module.startswith('diffusers.pipelines.flux.pipeline_flux'):
             return ModelType.FLUX
         else:
-            raise RuntimeError("unsuported model type {self.pipe.__class__}")
+            raise RuntimeError(f"unsuported model type {self.pipe.__class__}")
 
     def _initialize_pipe(self, device, offload_device):
         # sometimes text encoder is on a different device
@@ -744,7 +744,8 @@ class Cond2ImPipe(BasePipe):
                 else:
                     raise RuntimeError(f"Unexpected model type {type(self.pipe)}")
                 self.model_type = t_model_type
-                logging.debug(f"from_pipe source dtype {self.pipe.dtype}")
+                device = self.pipe.device
+                logging.debug(f"from_pipe source dtype {self.pipe.dtype} {device}")
                 cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None), self.pipe.dtype)
                 prev_dtype = self.pipe.dtype
                 if self.model_type == ModelType.SDXL:
@@ -754,11 +755,11 @@ class Cond2ImPipe(BasePipe):
                 else:
                     self.pipe = self._class.from_pipe(self.pipe, controlnet=cnets)
                 logging.debug(f"after from_pipe result dtype {self.pipe.dtype}")
-            for cnet in cnets:
-                cnet.to(prev_dtype)
-                logging.debug(f'moving cnet {id(cnet)} to self.pipe.dtype {prev_dtype}')
-                if 'offload_device' not in args:
-                    cnet.to(self.pipe.device)
+                for cnet in cnets:
+                    cnet.to(prev_dtype)
+                    logging.debug(f'moving cnet {id(cnet)} to self.pipe.dtype {prev_dtype}')
+                    if 'offload_device' not in args:
+                        cnet.to(device)
         else:
             # don't load anything, just reuse pipe
             super().__init__(model_id=model_id, pipe=pipe, **args)
@@ -1052,7 +1053,7 @@ class CInpaintingPipe(BasePipe):
         """
         dtype = torch.float32
         if torch.cuda.is_available():
-            dtype = torch.float16
+            dtype = torch.bfloat16
         dtype =  args.get('torch_type', dtype)
         cnet = ControlNetModel.from_pretrained(
             Cond2ImPipe.cpath+Cond2ImPipe.cmodels["inpaint"], torch_dtype=dtype)
