@@ -11,50 +11,11 @@ from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, Masked
 from multigen.log import setup_logger
 from multigen.pipes import ModelType
 from dummy import DummyDiffusionPipeline
-
-
-class TestCase(unittest.TestCase):
-
-    def compute_diff(self, im1: PIL.Image.Image, im2: PIL.Image.Image) -> float:
-        # convert to numpy array
-        im1 = numpy.asarray(im1)
-        im2 = numpy.asarray(im2)
-        # compute difference as float
-        diff = numpy.sum(numpy.abs(im1.astype(numpy.float32) - im2.astype(numpy.float32)))
-        return diff
-
-
-
-def found_models():
-    if os.environ.get('METAFUSION_MODELS_DIR'):
-        return True
-    return False
+from base_test import TestCase, found_models
 
 
 class MyTestCase(TestCase):
 
-    def setUp(self):
-        self._pipeline = None
-        self._img_count = 0
-        self.schedulers = 'DPMSolverMultistepScheduler', 'DDIMScheduler', 'EulerAncestralDiscreteScheduler'
-        self.device_args = dict()
-
-    def get_model(self):
-        models_dir = os.environ.get('METAFUSION_MODELS_DIR', None)
-        if models_dir is not None:
-            return models_dir + '/icb_diffusers'
-        return "hf-internal-testing/tiny-stable-diffusion-torch"
-
-    def get_ref_image(self, dw, dh):
-        img = Image.open("cube_planet_dms.png")
-        img = img.resize((img.width + dw, img.height + dh))
-        pth = './cube_planet_dms' + str(self._img_count) + '.png'
-        self._img_count += 1
-        img.save(pth)
-        return pth
-
-    def model_type(self):
-        return ModelType.SDXL if 'TestSDXL' in str(self.__class__) else ModelType.SD
 
     def test_basic_txt2im(self):
         model = self.get_model()
@@ -102,48 +63,6 @@ class MyTestCase(TestCase):
         # count number of generated files
         # each images goes with a txt file
         self.assertEqual(len(os.listdir(dirname)), 4)
-
-    def get_cls_by_type(self, pipe):
-        classes = dict()
-        classes[ModelType.SDXL] = pipe._classxl
-        classes[ModelType.SD] = pipe._class
-        classes[ModelType.FLUX] =  pipe._classflux
-        return classes
-
-    def test_loader(self):
-        loader = Loader()
-        model_id = self.get_model()
-        model_type = self.model_type()
-        device = torch.device('cpu')
-        if torch.cuda.is_available():
-            device = torch.device('cuda', 0)
-        if 'device' not in self.device_args:
-            self.device_args['device'] = device
-        classes = self.get_cls_by_type(MaskedIm2ImPipe)
-        # load inpainting pipe
-        cls = classes[model_type]
-        pipeline = loader.load_pipeline(cls, model_id, **self.device_args)
-        inpaint = MaskedIm2ImPipe(model_id, pipe=pipeline,  **self.device_args)
-
-        
-        prompt_classes = self.get_cls_by_type(Prompt2ImPipe)
-        # create prompt2im pipe
-        cls = prompt_classes[model_type]
-        device_args = dict(**self.device_args)
-        device = device_args.get('device', None)
-        if device is None:
-            if torch.cuda.is_available():
-                device = torch.device('cuda', 0)
-            else:
-                device = torch.device('cpu', 0)
-            device_args['device'] = device
-        pipeline = loader.load_pipeline(cls, model_id, **device_args)
-        prompt2image = Prompt2ImPipe(model_id, pipe=pipeline, **device_args)
-        prompt2image.setup(width=512, height=512, scheduler=self.schedulers[0], clip_skip=2, steps=5)
-        if device.type == 'cuda':
-            self.assertEqual(inpaint.pipe.unet.conv_out.weight.data_ptr(),
-                         prompt2image.pipe.unet.conv_out.weight.data_ptr(),
-                         "unets are different")
 
     def test_img2img_basic(self):
         pipe = Im2ImPipe(self.get_model(), model_type=self.model_type(), **self.device_args)
