@@ -10,3 +10,4 @@ psutil
 sentencepiece
 protobuf
 accelerate
+optimum-quanto
