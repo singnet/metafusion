@@ -105,6 +105,7 @@ class Loader:
                 quantize(result, dtype=quantize_dtype)
 
             if result.device != device:
+                logger.debug(f"move pipe to {device}")
                 result = result.to(dtype=torch_dtype, device=device)
             if result.dtype != torch_dtype:
                 result = result.to(dtype=torch_dtype)
@@ -148,6 +149,7 @@ class Loader:
                 item = pipe
                 if pipe.device.type == 'cuda':
                     device = pipe.device
+                    logger.debug("deepcopy pipe from gpu to save it in cpu cache")
                     item = cp.deepcopy(pipe.to('cpu'))
                     pipe.to(device)
                 self._cpu_pipes[descriptor] = item
