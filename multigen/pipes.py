@@ -149,6 +149,8 @@ class BasePipe:
             return ModelType.SD
         elif module.startswith('diffusers.pipelines.flux.pipeline_flux'):
             return ModelType.FLUX
+        elif 'masked_stable_diffusion_xl_img2img' in module:
+            return ModelType.SDXL
         else:
             raise RuntimeError(f"unsuported model type {self.pipe.__class__}")
 

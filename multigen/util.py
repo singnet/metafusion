@@ -107,6 +107,9 @@ def quantize(pipe, dtype=qfloat8):
             component_obj._quantization_dtype = dtype
 
 
+IS_QUANTIZED = '_is_quantized'
+
+
 def weightshare_copy(pipe):
     """
     Create a new pipe object then assign weights using load_state_dict from passed 'pipe'
@@ -127,10 +130,12 @@ def weightshare_copy(pipe):
                 setattr(copy, key, cls(getattr(copy, key).config))
 
             pipe_component = getattr(pipe, key)
-            if getattr(pipe_component, '_is_quantized', False):
+            if getattr(pipe_component, IS_QUANTIZED, False):
                 # Quantize the component in the copy using the same dtype
                 component_obj = getattr(copy, key)
                 _quantize(component_obj, weights=pipe_component._quantization_dtype)
+                setattr(component_obj, IS_QUANTIZED, True)
+                component_obj._quantization_dtype = pipe_component._quantization_dtype
     # assign=True is needed since our copy is on "meta" device, i.g. weights are empty
     for key, component in copy.components.items():
         if key == 'tokenizer' or key == 'tokenizer_2':

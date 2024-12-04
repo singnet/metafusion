@@ -73,17 +73,17 @@ class LoaderTestCase(TestCase):
                 device=load_device)
         for value in loader._cpu_pipes.values():
             assert id(value) != id(pipe11)
-        pipe1 = Prompt2ImPipe('flux', pipe=pipe11, device=load_device, offload_device=0)
+        pipe1 = Prompt2ImPipe('model_id', pipe=pipe11, device=load_device, offload_device=0)
         pipe22 = loader.load_pipeline(cls, model_id,
                 torch_dtype=torch.bfloat16,
                 device=load_device)
 
-        pipe2 = Prompt2ImPipe('flux', pipe=pipe22, device=load_device, offload_device=1)
+        pipe2 = Prompt2ImPipe(model_id, pipe=pipe22, device=load_device, offload_device=1)
 
         for comp_name in pipe2.pipe.components.keys():
             comp1 = pipe1.pipe.components[comp_name]
             comp2 = pipe2.pipe.components[comp_name]
-            if comp_name not in ['tokenizer', 'tokenizer_2']:
+            if comp_name not in ['tokenizer', 'tokenizer_2'] and comp1 is not None:
                 assert id(comp1) != id(comp2)
 
     def test_weightshare(self):
@@ -162,7 +162,6 @@ class TestSDXL(LoaderTestCase):
         if models_dir is not None:
             return models_dir + '/SDXL/stable-diffusion-xl-base-1.0'
         return "hf-internal-testing/tiny-stable-diffusion-xl-pipe"
-
 
 
 def get_test_cases():

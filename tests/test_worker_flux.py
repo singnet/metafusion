@@ -12,7 +12,6 @@ from multigen.pipes import Prompt2ImPipe
 from multigen.worker import ServiceThread
 from multigen.log import setup_logger
 
-setup_logger()
 
 
 
@@ -98,4 +97,5 @@ class WorkerTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    setup_logger('test-worker-flux.log')
     unittest.main()
