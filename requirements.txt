@@ -10,4 +10,4 @@ psutil
 sentencepiece
 protobuf
 accelerate
-optimum-quanto
+optimum-quanto==0.2.4
