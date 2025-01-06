@@ -539,12 +539,21 @@ class MaskedIm2ImPipe(Im2ImPipe):
     def _from_pipe(self, pipe, **args):
         cls = pipe.__class__
         if 'StableDiffusionXLPipeline' in str(cls) :
-            return self._classxl(**pipe.components, **args)
+            return self.__verify_from_pipe(self._classxl, pipe, **args)
         elif 'StableDiffusionPipeline' in str(cls):
-            return self._class(**pipe.components, **args)
+            return self.__verify_from_pipe(self._class, pipe, **args)
         elif 'Flux' in str(cls):
-            return self._classflux(**pipe.components, **args)
+            return self.__verify_from_pipe(self._classflux, pipe, **args)
         raise RuntimeError(f"can't load pipeline from type {cls}")
+
+    def __verify_from_pipe(self, cls, pipe, **args):
+        allowed = util.get_allowed_components(cls)
+        source_components = set(pipe.components.keys())
+        target_components = set(allowed)
+
+        logging.debug("Missing components: ", target_components - source_components)
+        logging.debug("Extra components: ", source_components - target_components)
+        return cls(**{k: v for (k, v) in pipe.components.items() if k in allowed}, **args)
 
     def setup(self, image=None, image_painted=None, mask=None, blur=4,
               blur_compose=4, sample_mode='sample', scale=None, **kwargs):
@@ -697,12 +706,12 @@ class Cond2ImPipe(BasePipe):
         "inpaint": 1.0,
         "qr": 1.5
     })
-    
-    cond_scales_defaults_flux = defaultdict(lambda: 0.8, 
+
+    cond_scales_defaults_flux = defaultdict(lambda: 0.8,
                                             {"canny-dev": 0.6})
 
     def __init__(self, model_id, pipe: Optional[StableDiffusionControlNetPipeline] = None,
-                 ctypes=["soft"], cnets: Optional[List[ControlNetModel]]=None, 
+                 ctypes=["soft"], cnets: Optional[List[ControlNetModel]]=None,
                  cnet_ids: Optional[List[str]]=None, model_type=None, **args):
         """
         Constructor
