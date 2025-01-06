@@ -3,6 +3,7 @@ import torch
 import psutil
 from PIL import Image
 import copy as cp
+from inspect import signature
 import optimum.quanto
 from optimum.quanto import freeze, qfloat8, quantize as _quantize
 from diffusers.utils import is_accelerate_available
@@ -146,3 +147,9 @@ def weightshare_copy(pipe):
     # some buffers might not be transfered from pipe to copy
     copy.to(pipe.device)
     return copy
+
+
+def get_allowed_components(cls: type) -> dict:
+    params = signature(cls.__init__).parameters
+    components = [name for name in params.keys() if name != 'self']
+    return components
