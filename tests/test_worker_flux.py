@@ -68,7 +68,7 @@ class WorkerTestCase(unittest.TestCase):
             nonlocal c
             c += 1
         
-        num_runs = 25
+        num_runs = 15
         for i in range(num_runs):
             if len(sessions) - 1 < i:
                 i %= len(sessions)

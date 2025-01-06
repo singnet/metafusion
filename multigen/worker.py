@@ -64,9 +64,15 @@ class ServiceThread(ServiceThreadBase):
                 # use quantisation by default for now
                 cls = pipe_class._classflux
                 if device.type == 'cuda':
-                    quantize_dtype = qfloat8
-                    # offload_device = device.index
-                    # device = torch.device('cpu')
+                    mb = torch.cuda.get_device_properties(device.index).total_memory / 1024 / 1024
+                    # quantize if there is more than 23 GB of memory
+                    # if less use cpu offload
+                    if 23000 < mb:
+                        self.logger.debug(f"set quantisation for the pipe on cuda:{device.index} has {mb}Mb")
+                        quantize_dtype = qfloat8
+                    else:
+                        offload_device = device.index
+                        device = torch.device('cpu')
             else:
                 cls = pipe_class._class
             pipeline = self._loader.load_pipeline(cls, model_id, torch_dtype=torch.bfloat16, 
