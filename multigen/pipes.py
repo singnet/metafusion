@@ -426,7 +426,7 @@ class Im2ImPipe(BasePipe):
         self._input_image = None
 
     def setup(self, fimage, image=None, strength=0.75,
-              guidance_scale=7.5, scale=None, timestep_spacing='linspace', **args):
+              guidance_scale=7.5, scale=None, timestep_spacing='linspace', width=None, height=None, **args):
         """
         Setup pipeline for generation.
 
@@ -445,8 +445,11 @@ class Im2ImPipe(BasePipe):
         self._input_image = Image.open(fimage).convert("RGB") if image is None else image
         self._input_image = self.scale_image(self._input_image, scale)
         self._original_size = self._input_image.size
+        logging.debug("origin image size {self._original_size}")
         self._input_image = util.pad_image_to_multiple_of_8(self._input_image)
         self.pipe_params.update({
+            "width": self._input_image.width if width is None else width,
+            "height": self._input_image.height if height is None else height,
             "strength": strength,
             "guidance_scale": guidance_scale
         })
@@ -499,6 +502,7 @@ class Im2ImPipe(BasePipe):
         kwargs.update({"image": self._input_image})
         self.try_set_scheduler(kwargs)
         image = self.pipe(**kwargs).images[0]
+        logging.debug(f'generated image {image}')
         result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
         return result
 
