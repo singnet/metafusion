@@ -862,6 +862,7 @@ class Cond2ImPipe(BasePipe):
         self.fname = fimage
         image = Image.open(fimage).convert("RGB") if image is None else image
         self._original_size = image.size
+        self._use_input_size = width is None or height is None
         image = util.pad_image_to_multiple_of_8(image)
         self._condition_image = [image]
         self._input_image = [image]
@@ -914,7 +915,8 @@ class Cond2ImPipe(BasePipe):
         inputs.update({"image": self._input_image,
                        "control_image": self._condition_image})
         image = self.pipe(**inputs).images[0]
-        result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
+        result = image.crop((0, 0, self._original_size[0] if self._use_input_size else inputs.get('height'),
+                                   self._original_size[1] if self._use_input_size else inputs.get('width') ))
         return result
 
 
