@@ -7,7 +7,7 @@ import torch
 import numpy
 
 from PIL import Image
-from multigen import Prompt2ImPipe, Im2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe, CIm2ImPipe
+from multigen import Prompt2ImPipe, Im2ImPipe, Cond2ImPipe, Cfgen, GenSession, Loader, MaskedIm2ImPipe, CIm2ImPipe
 from multigen.log import setup_logger
 from multigen.pipes import ModelType
 from dummy import DummyDiffusionPipeline
@@ -210,6 +210,21 @@ class MyTestCase(TestCase):
         diff = self.compute_diff(image_ddim, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
+    
+    def test_cond2im(self):
+        model = self.get_model()
+        model_type = self.model_type()
+        pipe = Cond2ImPipe(model, ctypes=["pose"], model_type=model_type)
+        pipe.setup("./pose6.jpeg", width=768, height=768)
+        seed = 49045438434843
+        params = dict(prompt="child in the coat playing in sandbox",
+                      negative_prompt="spherical",
+                      generator=torch.Generator().manual_seed(seed))
+        img = pipe.gen(params)
+        self.assertEqual(img.size, (768, 768))
+        pipe.setup("./pose6.jpeg")
+        img1 = pipe.gen(params)
+        self.assertEqual(img1.size, (450, 450))
 
 
 class TestSDXL(MyTestCase):
@@ -243,6 +258,10 @@ class TestFlux(MyTestCase):
 
     @unittest.skip('flux does not need test')
     def test_lpw_turned_off(self):
+        pass
+
+    @unittest.skip('not implemented yet')
+    def test_cond2im(self):
         pass
 
 

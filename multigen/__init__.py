@@ -1,4 +1,4 @@
-from .pipes import Prompt2ImPipe, Im2ImPipe, MaskedIm2ImPipe, CIm2ImPipe
+from .pipes import Prompt2ImPipe, Im2ImPipe, MaskedIm2ImPipe, CIm2ImPipe, Cond2ImPipe
 from .sessions import GenSession
 from .prompting import Cfgen
 from .loader import Loader
