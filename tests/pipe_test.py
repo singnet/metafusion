@@ -260,6 +260,10 @@ class TestFlux(MyTestCase):
     def test_lpw_turned_off(self):
         pass
 
+    @unittest.skip('not implemented yet')
+    def test_cond2im(self):
+        pass
+
 
 if __name__ == '__main__':
     setup_logger('test_pipe.log')
