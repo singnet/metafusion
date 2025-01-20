@@ -411,7 +411,7 @@ class Prompt2ImPipe(BasePipe):
         """
         kwargs = self.prepare_inputs(inputs)
         logging.debug("Prompt2ImPipe.gen calling pipe")
-        image = self.pipe(**kwargs).images[0]
+        image = self.pipe(**kwargs).images
         return image
 
 
@@ -501,10 +501,12 @@ class Im2ImPipe(BasePipe):
         # so we update kwargs with inputs after pipe_params
         kwargs.update({"image": self._input_image})
         self.try_set_scheduler(kwargs)
-        image = self.pipe(**kwargs).images[0]
-        logging.debug(f'generated image {image}')
-        result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
-        return result
+        res = []
+        for image in self.pipe(**kwargs).images:
+            logging.debug(f'generated image {image}')
+            result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
+            res.append(result)
+        return res
 
 
 class MaskedIm2ImPipe(Im2ImPipe):
@@ -644,13 +646,15 @@ class MaskedIm2ImPipe(Im2ImPipe):
             if 'sample_mode' not in inputs:
                 inputs['sample_mode'] = self._sample_mode
             inputs['original_image'] = normalised
-        img_gen = super().gen(inputs)
-
-        # compose with original using mask
-        img_compose = self._mask_compose * img_gen + (1 - self._mask_compose) * self._original_image.crop((0, 0, self._original_size[0], self._original_size[1]))
-        # convert to PIL image
-        img_compose = Image.fromarray(img_compose.astype(np.uint8))
-        return img_compose
+        images = super().gen(inputs)
+        res = []
+        for img_gen in images:
+            # compose with original using mask
+            img_compose = self._mask_compose * img_gen + (1 - self._mask_compose) * self._original_image.crop((0, 0, self._original_size[0], self._original_size[1]))
+            # convert to PIL image
+            img_compose = Image.fromarray(img_compose.astype(np.uint8))
+            res.append(img_compose)
+        return res
 
 
 class Cond2ImPipe(BasePipe):
@@ -914,10 +918,12 @@ class Cond2ImPipe(BasePipe):
         inputs = self.prepare_inputs(inputs)
         inputs.update({"image": self._input_image,
                        "control_image": self._condition_image})
-        image = self.pipe(**inputs).images[0]
-        result = image.crop((0, 0, self._original_size[0] if self._use_input_size else inputs.get('height'),
+        res = []
+        for image in self.pipe(**inputs).images:
+            result = image.crop((0, 0, self._original_size[0] if self._use_input_size else inputs.get('height'),
                                    self._original_size[1] if self._use_input_size else inputs.get('width') ))
-        return result
+            res.append(image)
+        return res
 
 
 class CIm2ImPipe(Cond2ImPipe):
@@ -1126,7 +1132,7 @@ class CInpaintingPipe(BasePipe):
             "mask_image": self._mask_image,
             "control_image": self._control_image
         })
-        image = self.pipe(**inputs).images[0]
+        image = self.pipe(**inputs).images
         return image
 
     def _make_inpaint_condition(self, image, image_mask):
