@@ -565,8 +565,8 @@ class MaskedIm2ImPipe(Im2ImPipe):
         source_components = set(pipe.components.keys())
         target_components = set(allowed)
 
-        logging.debug("Missing components: ", target_components - source_components)
-        logging.debug("Extra components: ", source_components - target_components)
+        logging.debug("Missing components: " + str(target_components - source_components))
+        logging.debug("Extra components: " + str(source_components - target_components))
         return cls(**{k: v for (k, v) in pipe.components.items() if k in allowed}, **args)
 
     def setup(self, image=None, image_painted=None, mask=None, blur=4,
