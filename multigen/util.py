@@ -28,37 +28,50 @@ def create_exif_metadata(im: Image, custom_metadata):
     return exif
 
 
-def pad_image_to_multiple_of_8(image: Image) -> Image:
+def pad_image_to_multiple(image: Image, padding_size: int = 8) -> Image:
     """
-    Pads the input image by repeating the bottom or right-most column of pixels
-    so that the height and width of the image is divisible by 8.
+    Pads the input image by repeating the bottom and right-most rows and columns of pixels
+    so that its dimensions are divisible by 'padding_size'.
 
     Args:
-        image (Image): The input PIL image.
+        image (Image): The input PIL Image.
+        padding_size (int): The multiple to which dimensions are padded.
 
     Returns:
-        Image: The padded PIL image.
+        Image: The padded PIL Image.
     """
-
     # Calculate the new dimensions
-    new_width = (image.width + 7) // 8 * 8
-    new_height = (image.height + 7) // 8 * 8
+    new_width = ((image.width + padding_size - 1) // padding_size) * padding_size
+    new_height = ((image.height + padding_size - 1) // padding_size) * padding_size
 
-    # Create a new image with the new dimensions and paste the original image onto it
+    # Calculate padding amounts
+    pad_right = new_width - image.width
+    pad_bottom = new_height - image.height
+
+    # Create a new image with the new dimensions
     padded_image = Image.new(image.mode, (new_width, new_height))
     padded_image.paste(image, (0, 0))
 
-    # Repeat the right-most column of pixels to fill the horizontal padding
-    for x in range(new_width - image.width):
-        box = (image.width + x, 0, image.width + x + 1, image.height)
-        region = image.crop((image.width - 1, 0, image.width, image.height))
-        padded_image.paste(region, box)
+    # Check if padding is needed
+    if pad_right > 0 or pad_bottom > 0:
+        # Get the last column and row
+        if pad_right > 0:
+            last_column = image.crop((image.width - 1, 0, image.width, image.height))
+            # Resize the last column to fill the right padding area
+            right_padding = last_column.resize((pad_right, image.height), Image.NEAREST)
+            padded_image.paste(right_padding, (image.width, 0))
 
-    # Repeat the bottom-most row of pixels to fill the vertical padding
-    for y in range(new_height - image.height):
-        box = (0, image.height + y, image.width, image.height + y + 1)
-        region = image.crop((0, image.height - 1, image.width, image.height))
-        padded_image.paste(region, box)
+        if pad_bottom > 0:
+            last_row = image.crop((0, image.height - 1, image.width, image.height))
+            # Resize the last row to fill the bottom padding area
+            bottom_padding = last_row.resize((image.width, pad_bottom), Image.NEAREST)
+            padded_image.paste(bottom_padding, (0, image.height))
+
+        if pad_right > 0 and pad_bottom > 0:
+            # Fill the bottom-right corner
+            last_pixel = image.getpixel((image.width - 1, image.height - 1))
+            corner = Image.new(image.mode, (pad_right, pad_bottom), last_pixel)
+            padded_image.paste(corner, (image.width, image.height))
 
     return padded_image
 
@@ -97,7 +110,7 @@ def awailable_ram():
 
 def quantize(pipe, dtype=qfloat8):
     components = ['unet', 'transformer', 'text_encoder', 'text_encoder_2', 'vae']
-    
+
     for component in components:
         if hasattr(pipe, component):
             component_obj = getattr(pipe, component)

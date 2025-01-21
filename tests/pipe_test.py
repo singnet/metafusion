@@ -220,10 +220,10 @@ class MyTestCase(TestCase):
         params = dict(prompt="child in the coat playing in sandbox",
                       negative_prompt="spherical",
                       generator=torch.Generator().manual_seed(seed))
-        img = pipe.gen(params)
+        img = pipe.gen(params)[0]
         self.assertEqual(img.size, (768, 768))
         pipe.setup("./pose6.jpeg")
-        img1 = pipe.gen(params)
+        img1 = pipe.gen(params)[0]
         self.assertEqual(img1.size, (450, 450))
 
 
