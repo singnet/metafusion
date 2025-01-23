@@ -362,6 +362,14 @@ class BasePipe:
         self.try_set_scheduler(inputs)
         return kwargs
 
+    @property
+    def pad(self):
+        pad = 8
+        if hasattr(self.pipe, 'image_processor'):
+            if hasattr(self.pipe.image_processor, 'vae_scale_factor'):
+                pad = self.pipe.image_processor.vae_scale_factor
+        return pad
+
 
 class Prompt2ImPipe(BasePipe):
     """
@@ -411,7 +419,7 @@ class Prompt2ImPipe(BasePipe):
         """
         kwargs = self.prepare_inputs(inputs)
         logging.debug("Prompt2ImPipe.gen calling pipe")
-        image = self.pipe(**kwargs).images[0]
+        image = self.pipe(**kwargs).images
         return image
 
 
@@ -446,7 +454,7 @@ class Im2ImPipe(BasePipe):
         self._input_image = self.scale_image(self._input_image, scale)
         self._original_size = self._input_image.size
         logging.debug("origin image size {self._original_size}")
-        self._input_image = util.pad_image_to_multiple_of_8(self._input_image)
+        self._input_image = util.pad_image_to_multiple(self._input_image, self.pad)
         self.pipe_params.update({
             "width": self._input_image.width if width is None else width,
             "height": self._input_image.height if height is None else height,
@@ -501,10 +509,12 @@ class Im2ImPipe(BasePipe):
         # so we update kwargs with inputs after pipe_params
         kwargs.update({"image": self._input_image})
         self.try_set_scheduler(kwargs)
-        image = self.pipe(**kwargs).images[0]
-        logging.debug(f'generated image {image}')
-        result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
-        return result
+        res = []
+        for image in self.pipe(**kwargs).images:
+            logging.debug(f'generated image {image}')
+            result = image.crop((0, 0, self._original_size[0], self._original_size[1]))
+            res.append(result)
+        return res
 
 
 class MaskedIm2ImPipe(Im2ImPipe):
@@ -555,8 +565,8 @@ class MaskedIm2ImPipe(Im2ImPipe):
         source_components = set(pipe.components.keys())
         target_components = set(allowed)
 
-        logging.debug("Missing components: ", target_components - source_components)
-        logging.debug("Extra components: ", source_components - target_components)
+        logging.debug("Missing components: " + str(target_components - source_components))
+        logging.debug("Extra components: " + str(source_components - target_components))
         return cls(**{k: v for (k, v) in pipe.components.items() if k in allowed}, **args)
 
     def setup(self, image=None, image_painted=None, mask=None, blur=4,
@@ -597,12 +607,13 @@ class MaskedIm2ImPipe(Im2ImPipe):
         input_image = self._image_painted if self._image_painted is not None else self._original_image
 
         super().setup(fimage=None, image=input_image, scale=scale, **kwargs)
+
         if self._original_image is not None:
             self._original_image = self.scale_image(self._original_image, scale)
-            self._original_image = util.pad_image_to_multiple_of_8(self._original_image)
+            self._original_image = util.pad_image_to_multiple(self._original_image, self.pad)
         if self._image_painted is not None:
             self._image_painted = self.scale_image(self._image_painted, scale)
-            self._image_painted = util.pad_image_to_multiple_of_8(self._image_painted)
+            self._image_painted = util.pad_image_to_multiple(self._image_painted, self.pad)
 
         # there are two options:
         # 1. mask is provided
@@ -619,7 +630,7 @@ class MaskedIm2ImPipe(Im2ImPipe):
             pil_mask = Image.fromarray(mask)
         if pil_mask.mode != "L":
             pil_mask = pil_mask.convert("L")
-        pil_mask = util.pad_image_to_multiple_of_8(pil_mask)
+        pil_mask = util.pad_image_to_multiple(pil_mask, self.pad)
         self._mask = pil_mask
         self._mask_blur = self.blur_mask(pil_mask, blur)
         self._mask_compose = self.blur_mask(pil_mask.crop((0, 0, self._original_size[0], self._original_size[1]))
@@ -644,13 +655,15 @@ class MaskedIm2ImPipe(Im2ImPipe):
             if 'sample_mode' not in inputs:
                 inputs['sample_mode'] = self._sample_mode
             inputs['original_image'] = normalised
-        img_gen = super().gen(inputs)
-
-        # compose with original using mask
-        img_compose = self._mask_compose * img_gen + (1 - self._mask_compose) * self._original_image.crop((0, 0, self._original_size[0], self._original_size[1]))
-        # convert to PIL image
-        img_compose = Image.fromarray(img_compose.astype(np.uint8))
-        return img_compose
+        images = super().gen(inputs)
+        res = []
+        for img_gen in images:
+            # compose with original using mask
+            img_compose = self._mask_compose * img_gen + (1 - self._mask_compose) * self._original_image.crop((0, 0, self._original_size[0], self._original_size[1]))
+            # convert to PIL image
+            img_compose = Image.fromarray(img_compose.astype(np.uint8))
+            res.append(img_compose)
+        return res
 
 
 class Cond2ImPipe(BasePipe):
@@ -863,7 +876,7 @@ class Cond2ImPipe(BasePipe):
         image = Image.open(fimage).convert("RGB") if image is None else image
         self._original_size = image.size
         self._use_input_size = width is None or height is None
-        image = util.pad_image_to_multiple_of_8(image)
+        image = util.pad_image_to_multiple(image, self.pad)
         self._condition_image = [image]
         self._input_image = [image]
         if cscales is None:
@@ -914,10 +927,12 @@ class Cond2ImPipe(BasePipe):
         inputs = self.prepare_inputs(inputs)
         inputs.update({"image": self._input_image,
                        "control_image": self._condition_image})
-        image = self.pipe(**inputs).images[0]
-        result = image.crop((0, 0, self._original_size[0] if self._use_input_size else inputs.get('height'),
+        res = []
+        for image in self.pipe(**inputs).images:
+            result = image.crop((0, 0, self._original_size[0] if self._use_input_size else inputs.get('height'),
                                    self._original_size[1] if self._use_input_size else inputs.get('width') ))
-        return result
+            res.append(result)
+        return res
 
 
 class CIm2ImPipe(Cond2ImPipe):
@@ -1038,7 +1053,7 @@ class CIm2ImPipe(Cond2ImPipe):
                 condition_image += [Image.fromarray(formatted)]
             else:
                 condition_image += [Image.fromarray(oriImg)]
-        return condition_image
+        return [c.resize((oriImg.shape[1], oriImg.shape[0])) for c in condition_image]
 
 
 class InpaintingPipe(MaskedIm2ImPipe):
@@ -1126,7 +1141,7 @@ class CInpaintingPipe(BasePipe):
             "mask_image": self._mask_image,
             "control_image": self._control_image
         })
-        image = self.pipe(**inputs).images[0]
+        image = self.pipe(**inputs).images
         return image
 
     def _make_inpaint_condition(self, image, image_mask):

@@ -28,7 +28,7 @@ class MyTestCase(TestCase):
         params = dict(prompt="a cube  planet, cube-shaped, space photo, masterpiece",
                       negative_prompt="spherical",
                       generator=torch.Generator().manual_seed(seed))
-        image = pipe.gen(params)
+        image = pipe.gen(params)[0]
         image.save("cube_test.png")
 
         # generate with different scheduler
@@ -36,7 +36,7 @@ class MyTestCase(TestCase):
             params.update(generator=torch.Generator().manual_seed(seed + 1))
         else:
             params.update(scheduler=self.schedulers[1])
-        image_ddim = pipe.gen(params)
+        image_ddim = pipe.gen(params)[0]
         image_ddim.save("cube_test2_dimm.png")
         diff = self.compute_diff(image_ddim, image)
         # check that difference is large
@@ -73,15 +73,15 @@ class MyTestCase(TestCase):
         seed = 49045438434843
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
-        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))
+        image = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))[0]
         image.save('test_img2img_basic.png')
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=7.6)
-        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))
+        image1 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))[0]
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
         pipe.setup(im, strength=0.7, steps=5, guidance_scale=3.3)
-        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))
+        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))[0]
         diff = self.compute_diff(image2, image)
         # check that difference is small
         self.assertLess(diff, 1)
@@ -108,18 +108,18 @@ class MyTestCase(TestCase):
         pipe.setup(**param_3_3)
         self.assertEqual(3.3, pipe.pipe_params['guidance_scale'])
         image = pipe.gen(dict(prompt="cube planet cartoon style", 
-                              generator=torch.Generator().manual_seed(seed)))
+                              generator=torch.Generator().manual_seed(seed)))[0]
         self.assertEqual(image.width, img.width)
         self.assertEqual(image.height, img.height)
         image.save('test_img2img_basic.png')
         pipe.setup(**param_7_6)
         image1 = pipe.gen(dict(prompt="cube planet cartoon style", 
-                               generator=torch.Generator().manual_seed(seed)))
+                               generator=torch.Generator().manual_seed(seed)))[0]
         diff = self.compute_diff(image1, image)
         # check that difference is large
         self.assertGreater(diff, 1000)
         pipe.setup(**param_3_3)
-        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))
+        image2 = pipe.gen(dict(prompt="cube planet cartoon style", generator=torch.Generator().manual_seed(seed)))[0]
         diff = self.compute_diff(image2, image)
         # check that difference is small
         self.assertLess(diff, 1)
@@ -138,12 +138,12 @@ class MyTestCase(TestCase):
         params = dict(prompt=prompt,
                       negative_prompt="spherical",
                       generator=torch.Generator().manual_seed(seed))
-        image = pipe.gen(params)
+        image = pipe.gen(params)[0]
         image.save("cube_test_lpw.png")
         params = dict(prompt=prompt + " , best quality, famous photo",
                 negative_prompt="spherical",
                 generator=torch.Generator().manual_seed(seed))
-        image1 = pipe.gen(params)
+        image1 = pipe.gen(params)[0]
         image.save("cube_test_lpw1.png")
         diff = self.compute_diff(image1, image)
         # check that difference is large
@@ -161,12 +161,12 @@ class MyTestCase(TestCase):
         params = dict(prompt=prompt,
                       negative_prompt="spherical",
                       generator=torch.Generator().manual_seed(seed))
-        image = pipe.gen(params)
+        image = pipe.gen(params)[0]
         image.save("cube_test_no_lpw.png")
         params = dict(prompt=prompt + " , best quality, famous photo",
                 negative_prompt="spherical",
                 generator=torch.Generator().manual_seed(seed))
-        image1 = pipe.gen(params)
+        image1 = pipe.gen(params)[0]
         image.save("cube_test_no_lpw1.png")
         diff = self.compute_diff(image1, image)
         # check that difference is large
@@ -193,7 +193,7 @@ class MyTestCase(TestCase):
         params = dict(prompt="cube planet minecraft style",
                       negative_prompt="spherical",
                       generator=torch.Generator().manual_seed(seed))
-        image = pipe.gen(params)
+        image = pipe.gen(params)[0]
         image.save("mech_test.png")
         img_ref = PIL.Image.open(imgpth)
         self.assertEqual(image.width, img_ref.width)
@@ -205,7 +205,7 @@ class MyTestCase(TestCase):
         else:
             # generate with different scheduler
             params.update(scheduler=self.schedulers[1])
-        image_ddim = pipe.gen(params)
+        image_ddim = pipe.gen(params)[0]
         image_ddim.save("cube_test2_dimm.png")
         diff = self.compute_diff(image_ddim, image)
         # check that difference is large
@@ -220,10 +220,10 @@ class MyTestCase(TestCase):
         params = dict(prompt="child in the coat playing in sandbox",
                       negative_prompt="spherical",
                       generator=torch.Generator().manual_seed(seed))
-        img = pipe.gen(params)
+        img = pipe.gen(params)[0]
         self.assertEqual(img.size, (768, 768))
         pipe.setup("./pose6.jpeg")
-        img1 = pipe.gen(params)
+        img1 = pipe.gen(params)[0]
         self.assertEqual(img1.size, (450, 450))
 
 
