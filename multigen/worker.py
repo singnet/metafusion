@@ -83,7 +83,7 @@ class ServiceThread(ServiceThreadBase):
                 assert pipeline.device == device
         else:
             # our pipeline uses controlnet
-            pipeline = self._loader.get_pipeline(model_id, device=device, model_type=model_type)
+            pipeline = self._loader.get_pipeline(model_id, device=device)#, model_type=model_type)
             if model_type == FLUX:
                 cnet_type = ModelType.FLUX
             if pipeline is None or 'controlnet' not in pipeline.components:
