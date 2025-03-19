@@ -777,11 +777,11 @@ class Cond2ImPipe(BasePipe):
                 cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None), self.pipe.dtype)
                 prev_dtype = self.pipe.dtype
                 if self.model_type == ModelType.SDXL:
-                    self.pipe = self._classxl.from_pipe(self.pipe, controlnet=cnets)
+                    self.pipe = self._classxl.from_pipe(self.pipe, controlnet=cnets, torch_dtype=self.pipe.dtype)
                 elif self.model_type == ModelType.FLUX:
-                    self.pipe = self._classflux.from_pipe(self.pipe, controlnet=cnets[0])
+                    self.pipe = self._classflux.from_pipe(self.pipe, controlnet=cnets[0], torch_dtype=self.pipe.dtype)
                 else:
-                    self.pipe = self._class.from_pipe(self.pipe, controlnet=cnets)
+                    self.pipe = self._class.from_pipe(self.pipe, controlnet=cnets, torch_dtype=self.pipe.dtype)
                 logging.debug(f"after from_pipe result dtype {self.pipe.dtype}")
                 for cnet in cnets:
                     cnet.to(prev_dtype)
