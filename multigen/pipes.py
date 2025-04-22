@@ -758,7 +758,8 @@ class Cond2ImPipe(BasePipe):
             if model_id.endswith('.safetensors'):
                 if self.model_type is None:
                     raise RuntimeError(f"model type is not specified for safetensors file {model_id}")
-                cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None), args.get('torch_dtype', None))
+                default_dtype = torch.float16 if self.model_type == ModelType.SDXL else None
+                cnets = self._load_cnets(cnets, cnet_ids, args.get('offload_device', None), dtype=args.get('torch_dtype', default_dtype))
                 super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
             else:
                 super().__init__(model_id=model_id, pipe=pipe, controlnet=cnets, model_type=model_type, **args)
