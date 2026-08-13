@@ -670,8 +670,8 @@ class Cond2ImPipe(BasePipe):
     """
     Image to image generation with ControlNet
     """
-    _class = StableDiffusionControlNetImg2ImgPipeline
-    _classxl = StableDiffusionXLControlNetImg2ImgPipeline
+    _class = StableDiffusionControlNetPipeline #StableDiffusionControlNetImg2ImgPipeline
+    _classxl = StableDiffusionXLControlNetPipeline #StableDiffusionXLControlNetImg2ImgPipeline
     _autopipeline = DiffusionPipeline
     _classflux = FluxControlNetImg2ImgPipeline
 
@@ -811,7 +811,7 @@ class Cond2ImPipe(BasePipe):
                 if c in cmodels:
                     cnets.append(ControlNet.from_pretrained(cpath+cmodels[c]))
                 else:
-                    cnets.append(ControlNet.from_pretrained(c, torch_dtype=torch_dtype))
+                    cnets.append(ControlNet.from_pretrained(c, torch_dtype=dtype))
         if offload_device is not None:
             # controlnet should be on the same device where main model is working
             dev = torch.device('cuda', offload_device)
